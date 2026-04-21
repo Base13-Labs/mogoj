@@ -1,0 +1,6 @@
+# Mogoj tools — Python CLI scripts for memory management
+#
+# No external dependencies required. All tools use Python 3 stdlib only.
+# Just run with: python3 tools/<script>.py
+#
+# Tested with Python 3.9+
