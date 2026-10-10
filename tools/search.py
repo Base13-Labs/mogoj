@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     ROOT, TYPE_DIRS, ALL_SEARCH_DIRS, DB_PATH,
-    collect_md_files, relative_path, mogoj_main,
+    collect_md_files, relative_path, mogoj_main, add_root_arguments, report_root,
 )
 
 
@@ -233,6 +233,7 @@ def main():
                "  python tools/search.py 'pricing' --after 2026-04-01\n"
                "  python tools/search.py 'sprint' --last-week\n",
     )
+    add_root_arguments(parser)
     parser.add_argument("query", help="Search query (plain text or regex with --regex)")
     parser.add_argument("--type", "-t", choices=list(TYPE_DIRS.keys()),
                         help="Filter to a specific doc type")
@@ -258,6 +259,7 @@ def main():
                         help="Show BM25 relevance score (FTS5 only)")
 
     args = parser.parse_args()
+    report_root(args)
 
     # Handle temporal shortcuts
     if args.last_week or args.last_month:

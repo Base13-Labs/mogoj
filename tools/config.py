@@ -7,14 +7,27 @@ current hardcoded values. Missing keys = use defaults.
 """
 
 import configparser
+import os
 from pathlib import Path
 
 
 def _find_config():
-    """Find config.ini relative to this script's repo root."""
-    start = Path(__file__).resolve().parent.parent
-    cfg = start / "config.ini"
-    return cfg if cfg.exists() else None
+    """Find config without coupling memory to the tool checkout."""
+    explicit = os.environ.get("MOGOJ_CONFIG")
+    if explicit:
+        cfg = Path(explicit).expanduser()
+        return cfg if cfg.is_file() else None
+
+    root = os.environ.get("MOGOJ_ROOT")
+    if root:
+        cfg = Path(root).expanduser() / "config.ini"
+        return cfg if cfg.is_file() else None
+
+    for candidate in (Path.cwd(), *Path.cwd().parents):
+        if (candidate / ".mogoj" / "store.json").is_file():
+            cfg = candidate / "config.ini"
+            return cfg if cfg.is_file() else None
+    return None
 
 
 _parser = configparser.ConfigParser()

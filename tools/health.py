@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     ROOT, INDEX_JSON, DB_PATH, CURRENT_RAM,
-    load_json, save_json, mogoj_main,
+    load_json, save_json, mogoj_main, add_root_arguments, report_root,
 )
 
 
@@ -409,6 +409,7 @@ def main():
                "  python tools/health.py orphans\n"
                "  python tools/health.py people\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     p_check = sub.add_parser("check", help="Run all health checks")
@@ -423,6 +424,7 @@ def main():
     sub.add_parser("people", help="Show missing people profiles")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)

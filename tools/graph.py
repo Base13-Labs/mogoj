@@ -20,8 +20,9 @@ from pathlib import Path
 # Import shared utilities
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
-    INDEX_JSON, GRAPH_JSON,
+    ROOT, INDEX_JSON, GRAPH_JSON,
     load_json, save_json, mogoj_main, PrereqError,
+    add_root_arguments, report_root,
 )
 
 
@@ -202,6 +203,7 @@ def main():
                "  python tools/graph.py path chatx.md packman.md\n"
                "  python tools/graph.py clusters\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("build", help="Build graph.json from context-index.json")
@@ -216,6 +218,7 @@ def main():
     sub.add_parser("clusters", help="Show clusters of related docs")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)

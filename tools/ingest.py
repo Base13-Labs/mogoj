@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     ROOT, extract_keywords, extract_title, extract_date,
     relative_path, mogoj_main, MAX_KEYWORDS_PER_DOC,
+    add_root_arguments, report_root, store_path,
 )
 
 
@@ -147,7 +148,7 @@ def cmd_import(args):
     meta = extract_metadata(src)
 
     if args.dest:
-        dest = ROOT / args.dest
+        dest = store_path(args.dest)
     elif args.type:
         type_dirs = {
             "project": ROOT / "docs" / "projects",
@@ -190,6 +191,7 @@ def main():
                "  python tools/ingest.py import ~/exports/decision.md --type decision\n"
                "  python tools/ingest.py import ~/exports/doc.md --dest docs/projects/foo.md\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     p_scan = sub.add_parser("scan", help="Scan a directory of markdown files")
@@ -204,6 +206,7 @@ def main():
     p_import.add_argument("--force", "-f", action="store_true", help="Overwrite existing files")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)
