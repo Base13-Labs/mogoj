@@ -9,7 +9,7 @@ This is the **engine**, not the data store. It contains:
 - `tools/` — Python CLI scripts for memory operations
 - `template/` — empty directory structure for initializing new memory stores
 
-Your actual memory data lives in a separate directory (default: `~/code/brain/`), configured via `$MOGOJ_ROOT`.
+Your actual memory data lives in a separate initialized store (default: `~/.mogoj`), optionally configured via `$MOGOJ_ROOT` or `mogoj --root PATH`.
 
 ## Agent Rules
 
@@ -26,5 +26,5 @@ Each `.md` file in `skills/` is a Claude Code slash command. When symlinked to `
 
 Skills locate the memory store via:
 1. `$MOGOJ_ROOT` env var
-2. `~/code/brain/` fallback
-3. Walking up from cwd (for tools)
+2. A validated `.mogoj/store.json` marker in the current directory or its parents
+3. The initialized `~/.mogoj` default
