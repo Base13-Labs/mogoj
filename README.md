@@ -57,6 +57,31 @@ Mogoj indexes Markdown locally with SQLite FTS5/BM25. Retrieval is progressive: 
 
 Mogoj is not a generic vector database. It does not require embeddings, a model call, a server, chunk hosting, or opaque binary source data. Choose a vector database when you need semantic retrieval over very large corpora or a multi-user service. Choose Mogoj when humans should own readable files, citations and migrations matter, and the context window—not storage—is the scarce resource. See the [published beta benchmark](docs/beta-retrieval-benchmark.md).
 
+## Architecture in 30 seconds
+
+Mogoj separates the **engine** from the **memory store**. The engine is the CLI and agent plugins in this repository. The store is a private directory owned by the user. Markdown in that store is canonical; SQLite FTS5 is a disposable, rebuildable index. Every client—terminal, Claude Code, Codex, or a supported ChatGPT plugin surface—uses the same CLI, so storage, privacy checks, root selection, retrieval budgets, and citations behave consistently.
+
+```text
+person or AI agent
+        │
+        ▼
+agent skill/plugin ──────┐
+                        ▼
+terminal ───────────► mogoj CLI
+                        │
+             ┌──────────┴──────────┐
+             ▼                     ▼
+    Markdown source of truth   SQLite FTS5 index
+    decisions, projects,       derived and safe
+    sessions, active memory    to delete/rebuild
+             │                     │
+             └──────────┬──────────┘
+                        ▼
+              bounded cited context
+```
+
+The central design choice is to optimize the *context sent to an AI*, not to maximize stored data. Search returns a small ranked index and cited snippets first; full documents are opt-in and included only when they fit the configured budget. Read the [long-form architecture and design reasoning](docs/architecture.md) for component boundaries, write/search/migration flows, safety properties, and trade-offs.
+
 ## Upgrade, migration, and rollback
 
 Re-run the installer to add a new engine version. Preview store changes before upgrading:
