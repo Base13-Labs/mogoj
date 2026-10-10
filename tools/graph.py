@@ -17,60 +17,38 @@ import sys
 from collections import defaultdict, deque
 from pathlib import Path
 
-
-def find_repo_root():
-    start = Path.cwd()
-    for p in [start] + list(start.parents):
-        if (p / ".git").exists() or (p / "CLAUDE.md").exists():
-            return p
-    script = Path(__file__).resolve().parent.parent
-    if (script / ".git").exists() or (script / "CLAUDE.md").exists():
-        return script
-    print("Error: could not find repo root.", file=sys.stderr)
-    sys.exit(1)
-
-
-ROOT = find_repo_root()
-INDEX_JSON = ROOT / "data" / "index" / "context-index.json"
-GRAPH_JSON = ROOT / "data" / "index" / "graph.json"
+# Import shared utilities
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import (
+    INDEX_JSON, GRAPH_JSON,
+    load_json, save_json, mogoj_main, PrereqError,
+)
 
 
 def load_index():
-    if not INDEX_JSON.exists():
-        print(f"Index not found: {INDEX_JSON}")
-        print("Run 'python tools/index.py build' first.")
-        sys.exit(1)
-    with open(INDEX_JSON, "r") as f:
-        return json.load(f)
+    data = load_json(INDEX_JSON)
+    if data is None:
+        raise PrereqError(f"Index not found: {INDEX_JSON}\nRun 'python tools/index.py build' first.")
+    return data
 
 
 def load_graph():
-    if not GRAPH_JSON.exists():
-        print(f"Graph not found: {GRAPH_JSON}")
-        print("Run 'python tools/graph.py build' first.")
-        sys.exit(1)
-    with open(GRAPH_JSON, "r") as f:
-        return json.load(f)
+    data = load_json(GRAPH_JSON)
+    if data is None:
+        raise PrereqError(f"Graph not found: {GRAPH_JSON}\nRun 'python tools/graph.py build' first.")
+    return data
 
 
 def build_graph_data(index):
-    """Build adjacency data from the keyword index.
-
-    Returns:
-        nodes: list of doc paths
-        edges: dict of doc -> dict of neighbor_doc -> list of shared keywords
-    """
-    # Invert: doc -> set of keywords
+    """Build adjacency data from the keyword index."""
     doc_keywords = defaultdict(set)
     for kw, docs in index.items():
         for d in docs:
             doc_keywords[d].add(kw)
 
     nodes = sorted(doc_keywords.keys())
-    # Build edges: for each pair of docs sharing keywords
     edges = defaultdict(lambda: defaultdict(list))
 
-    # keyword -> docs gives us co-occurrence
     for kw, docs in index.items():
         docs = sorted(set(docs))
         for i in range(len(docs)):
@@ -78,7 +56,6 @@ def build_graph_data(index):
                 edges[docs[i]][docs[j]].append(kw)
                 edges[docs[j]][docs[i]].append(kw)
 
-    # Convert to serializable
     edges_serial = {}
     for doc, neighbors in edges.items():
         edges_serial[doc] = {n: sorted(kws) for n, kws in neighbors.items()}
@@ -95,9 +72,7 @@ def cmd_build(args):
     index = load_index()
     graph = build_graph_data(index)
 
-    GRAPH_JSON.parent.mkdir(parents=True, exist_ok=True)
-    with open(GRAPH_JSON, "w") as f:
-        json.dump(graph, f, indent=2)
+    save_json(GRAPH_JSON, graph, sort_keys=False)
 
     total_edges = sum(len(v) for v in graph["edges"].values()) // 2
     print(f"Graph built: {len(graph['nodes'])} nodes, {total_edges} edges")
@@ -107,10 +82,8 @@ def cmd_build(args):
 def find_doc(graph, query):
     """Find a doc in the graph by partial match."""
     query_lower = query.lower()
-    # Exact match
     if query in graph["nodes"]:
         return query
-    # Partial match
     matches = [n for n in graph["nodes"] if query_lower in n.lower()]
     if len(matches) == 1:
         return matches[0]
@@ -133,7 +106,6 @@ def cmd_neighbors(args):
         print(f"'{doc}' has no connections.")
         return
 
-    # Sort by number of shared keywords (strongest connections first)
     sorted_neighbors = sorted(edges.items(), key=lambda x: -len(x[1]))
 
     print(f"Neighbors of '{doc}' ({len(sorted_neighbors)} connections):\n")
@@ -157,7 +129,6 @@ def cmd_path(args):
 
     edges = graph.get("edges", {})
 
-    # BFS
     visited = {doc1}
     queue = deque([(doc1, [doc1])])
 
@@ -193,7 +164,6 @@ def cmd_clusters(args):
     for node in sorted(nodes):
         if node in visited:
             continue
-        # BFS to find connected component
         component = []
         queue = deque([node])
         while queue:
@@ -207,12 +177,10 @@ def cmd_clusters(args):
                     queue.append(neighbor)
         clusters.append(sorted(component))
 
-    # Sort clusters by size (largest first)
     clusters.sort(key=lambda c: -len(c))
 
     print(f"Found {len(clusters)} cluster(s):\n")
     for i, cluster in enumerate(clusters, 1):
-        # Find the most connected doc in the cluster
         hub = max(cluster, key=lambda d: len(edges.get(d, {}))) if edges else cluster[0]
         hub_connections = len(edges.get(hub, {}))
 
@@ -223,6 +191,7 @@ def cmd_clusters(args):
         print()
 
 
+@mogoj_main
 def main():
     parser = argparse.ArgumentParser(
         description="Mogoj Graph — doc relationship graph from context index",
@@ -244,7 +213,7 @@ def main():
     p_path.add_argument("doc1", help="Start doc")
     p_path.add_argument("doc2", help="End doc")
 
-    p_clusters = sub.add_parser("clusters", help="Show clusters of related docs")
+    sub.add_parser("clusters", help="Show clusters of related docs")
 
     args = parser.parse_args()
     if not args.command:
