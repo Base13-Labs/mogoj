@@ -99,7 +99,9 @@ def get_conn():
 
 def infer_doc_type(filepath, content):
     """Infer document type from path and content."""
-    path_str = str(filepath).lower()
+    # Normalize separators explicitly because hook-generated checkpoints must
+    # receive the same type on Windows and POSIX hosts.
+    path_str = str(filepath).replace("\\", "/").lower()
     content_lower = content.lower()
 
     if "/decisions/" in path_str:

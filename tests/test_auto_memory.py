@@ -189,6 +189,28 @@ class AutomaticMemoryTests(unittest.TestCase):
         self.assertEqual(output, {})
         self.assertFalse(disabled_store.exists())
 
+    def test_session_type_inference_accepts_windows_paths(self):
+        self.hook("session-start", {"cwd": str(self.project), "session_id": "s1"})
+        env = dict(os.environ, MOGOJ_ROOT=str(self.store))
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys; sys.path.insert(0, sys.argv[1]); "
+                    "from db import infer_doc_type; print(infer_doc_type(sys.argv[2], ''))"
+                ),
+                str(REPO / "tools"),
+                r"C:\Users\person\.mogoj\data\sessions\checkpoint.md",
+            ],
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "session")
+
 
 if __name__ == "__main__":
     unittest.main()
