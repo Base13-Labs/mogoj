@@ -164,7 +164,16 @@ except MogojError as exc:
 INDEX_JSON = ROOT / "data" / "index" / "context-index.json"
 INDEX_MD = ROOT / "data" / "index" / "context-index.md"
 GRAPH_JSON = ROOT / "data" / "index" / "graph.json"
-DB_PATH = ROOT / "data" / "db" / "mogoj.db"
+_db_override = os.environ.get("MOGOJ_DB_PATH")
+if _db_override:
+    DB_PATH = Path(_db_override).expanduser().resolve()
+    try:
+        DB_PATH.relative_to(ROOT)
+    except ValueError:
+        print("Error: MOGOJ_DB_PATH must stay inside the Mogoj store.", file=sys.stderr)
+        sys.exit(EXIT_BAD_INPUT)
+else:
+    DB_PATH = ROOT / "data" / "db" / "mogoj.db"
 
 RAM_DIR = ROOT / "data" / "ram"
 CURRENT_RAM = RAM_DIR / "current.md"
