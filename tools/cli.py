@@ -124,6 +124,47 @@ def cmd_init(args):
         print("Next: mogoj save \"My first memory\" --title \"First memory\"")
 
 
+def cmd_onboard(args):
+    """Guide store location, agent choice, and optional Markdown import."""
+    if args.memory_path:
+        memory_path = args.memory_path
+    elif args.root:
+        memory_path = args.root
+    elif sys.stdin.isatty():
+        default = str(Path.home() / ".mogoj")
+        memory_path = input(f"Where should private memory live? [{default}] ").strip() or default
+    else:
+        memory_path = str(Path.home() / ".mogoj")
+    agents = args.agents
+    if agents is None and sys.stdin.isatty():
+        agents = input("Connect agents (codex, claude, both, or none)? [both] ").strip() or "both"
+    agents = agents or "none"
+    init_args = argparse.Namespace(path=memory_path, root=None, yes=args.yes, json=False)
+    cmd_init(init_args)
+    root = Path(memory_path).expanduser().resolve()
+    integration = root / ".mogoj" / "integrations.json"
+    integration.write_text(json.dumps({"agents": agents}, indent=2) + "\n")
+    integration.chmod(0o600)
+    import_path = args.import_path
+    if import_path is None and sys.stdin.isatty():
+        import_path = input("Folder of existing Markdown to import (Enter to skip): ").strip() or None
+    imported = 0
+    if import_path:
+        source = Path(import_path).expanduser().resolve()
+        if not source.is_dir():
+            raise CliError(f"Import folder not found: {source}")
+        for markdown in sorted(source.rglob("*.md")):
+            run_tool(root, "ingest.py", ["import", str(markdown)], capture=True)
+            imported += 1
+    result = {"ok": True, "root": str(root), "agents": agents, "imported": imported}
+    if args.json:
+        emit(result, True)
+    else:
+        print(f"Onboarding complete. Agent choice: {agents}; imported: {imported}.")
+        print("Try: mogoj save \"My first memory\" --title \"First memory\"")
+        print("Then: mogoj rebuild && mogoj search \"first memory\"")
+
+
 def markdown_files(root):
     files = []
     for directory in (root / "docs", root / "data" / "sessions", root / "data" / "ram"):
@@ -323,6 +364,13 @@ def build_parser():
     init_parser.add_argument("path", nargs="?")
     init_parser.add_argument("--yes", action="store_true", help="Accept an existing non-empty folder")
     init_parser.set_defaults(func=cmd_init)
+
+    onboard_parser = sub.add_parser("onboard", help="Guided first-run setup")
+    onboard_parser.add_argument("--memory-path")
+    onboard_parser.add_argument("--agents", choices=("codex", "claude", "both", "none"))
+    onboard_parser.add_argument("--import-path")
+    onboard_parser.add_argument("--yes", action="store_true")
+    onboard_parser.set_defaults(func=cmd_onboard)
 
     sub.add_parser("status", help="Show store status").set_defaults(func=cmd_status)
     sub.add_parser("doctor", help="Diagnose setup and integrations").set_defaults(func=cmd_doctor)
