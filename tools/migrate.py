@@ -80,9 +80,9 @@ def backup_store(label="backup", dry_run=False):
     with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path, relative in files:
             data = path.read_bytes()
-            archive.writestr(str(relative), data)
+            archive.writestr(relative.as_posix(), data)
             manifest["files"].append({
-                "path": str(relative),
+                "path": relative.as_posix(),
                 "sha256": hashlib.sha256(data).hexdigest(),
                 "size": len(data),
             })
@@ -200,7 +200,10 @@ def rollback(backup_name=None, dry_run=False):
     if not backup.is_file() or BACKUP_DIR.resolve() not in backup.parents:
         raise MogojError(f"Invalid backup: {backup}")
 
-    generated = {str(path.relative_to(ROOT)): path for path in GENERATED_FILES}
+    # ZIP member names always use forward slashes, including archives created on
+    # Windows. Normalize our lookup keys so rollback behaves identically on every
+    # supported platform.
+    generated = {path.relative_to(ROOT).as_posix(): path for path in GENERATED_FILES}
     if dry_run:
         print(f"Would restore generated artifacts from {backup}")
         return

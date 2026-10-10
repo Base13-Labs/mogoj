@@ -80,6 +80,7 @@ class MigrationTests(unittest.TestCase):
         source.write_text("# changed after backup\n")
         result = self.run_mogoj(root, "rollback")
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Restored: data/db/mogoj.db", result.stdout.replace("\\", "/"))
         self.assertEqual(source.read_text(), "# changed after backup\n")
         connection = sqlite3.connect(str(database))
         try:
