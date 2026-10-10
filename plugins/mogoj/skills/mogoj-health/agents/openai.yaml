@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Health"
+  short_description: "Diagnose local memory configuration"
+  default_prompt: "Use $mogoj-health to diagnose my Mogoj setup."

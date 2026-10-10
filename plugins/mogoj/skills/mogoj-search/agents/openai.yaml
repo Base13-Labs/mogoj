@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Search"
+  short_description: "Recall bounded, cited local context"
+  default_prompt: "Use $mogoj-search to recall relevant local memory."

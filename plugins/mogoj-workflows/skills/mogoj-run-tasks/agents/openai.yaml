@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Run Tasks"
+  short_description: "Execute an approved task list safely"
+  default_prompt: "Use $mogoj-run-tasks to execute this approved plan."
