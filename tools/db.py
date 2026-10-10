@@ -28,7 +28,7 @@ from common import (
     SCAN_DIRS, ALL_SEARCH_DIRS,
     file_hash, extract_title, extract_date,
     collect_md_files, relative_doc_path, load_json,
-    mogoj_main, PrereqError,
+    mogoj_main, PrereqError, add_root_arguments, report_root,
 )
 
 SCHEMA = """
@@ -374,6 +374,7 @@ def main():
                "  python tools/db.py status\n"
                "  python tools/db.py vacuum\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     p_init = sub.add_parser("init", help="Create database with all tables")
@@ -385,6 +386,7 @@ def main():
     sub.add_parser("vacuum", help="Run VACUUM to reclaim space")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)

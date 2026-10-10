@@ -8,6 +8,7 @@ file collection, JSON I/O, hashing, metadata extraction, and error handling.
 
 import hashlib
 import json
+import os
 import re
 import sys
 from collections import defaultdict
@@ -66,25 +67,99 @@ def mogoj_main(main_func):
 # Repo root detection (single canonical implementation)
 # ---------------------------------------------------------------------------
 
-def find_repo_root():
-    """Walk up from cwd or script dir to find the repo root (contains .git or CLAUDE.md)."""
-    start = Path.cwd()
-    for p in [start] + list(start.parents):
-        if (p / ".git").exists() or (p / "CLAUDE.md").exists():
-            return p
-    # Fallback: script location
-    script = Path(__file__).resolve().parent.parent
-    if (script / ".git").exists() or (script / "CLAUDE.md").exists():
-        return script
-    print("Error: could not find repo root.", file=sys.stderr)
-    sys.exit(1)
+STORE_MARKER = Path(".mogoj/store.json")
+
+
+def is_mogoj_store(path):
+    """Return whether *path* is an initialized Mogoj memory store."""
+    root = Path(path).expanduser()
+    return root.is_dir() and (root / STORE_MARKER).is_file()
+
+
+def _explicit_root_from_argv(argv=None):
+    """Read the process-wide --root option before individual tools parse args."""
+    argv = list(sys.argv[1:] if argv is None else argv)
+    for index, value in enumerate(argv):
+        if value == "--root":
+            if index + 1 >= len(argv):
+                raise BadInputError("--root requires a path")
+            return argv[index + 1]
+        if value.startswith("--root="):
+            return value.split("=", 1)[1]
+    return None
+
+
+def find_repo_root(explicit=None):
+    """Resolve the memory store without guessing from unrelated git checkouts.
+
+    Resolution order is an explicit argument, ``MOGOJ_ROOT``, the nearest
+    initialized parent, then ``~/.mogoj``. An explicit/environment path is
+    accepted for compatibility with pre-marker stores, but it must exist.
+    """
+    configured = explicit or os.environ.get("MOGOJ_ROOT")
+    if configured:
+        root = Path(configured).expanduser().resolve()
+        if not root.is_dir():
+            raise PrereqError(
+                f"Mogoj store does not exist: {root}\n"
+                "Run 'mogoj init --root <path>' first."
+            )
+        return root
+
+    start = Path.cwd().resolve()
+    for candidate in (start, *start.parents):
+        if is_mogoj_store(candidate):
+            return candidate
+
+    default = (Path.home() / ".mogoj").resolve()
+    if is_mogoj_store(default):
+        return default
+
+    raise PrereqError(
+        "No initialized Mogoj store found. Set MOGOJ_ROOT or run "
+        "'mogoj init --root <path>'."
+    )
+
+
+def store_path(relative):
+    """Resolve a store-relative path and reject traversal outside the store."""
+    candidate = (ROOT / relative).resolve()
+    try:
+        candidate.relative_to(ROOT)
+    except ValueError as exc:
+        raise BadInputError(f"Path escapes the Mogoj store: {relative}") from exc
+    return candidate
+
+
+def add_root_arguments(parser):
+    """Add the shared root and diagnostics flags to a tool parser."""
+    parser.add_argument(
+        "--root",
+        metavar="PATH",
+        help="Mogoj memory store (overrides MOGOJ_ROOT)",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print the resolved memory-store root",
+    )
+
+
+def report_root(args):
+    """Print the normalized root when verbose diagnostics are requested."""
+    if getattr(args, "verbose", False):
+        print(f"Mogoj root: {ROOT}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
 # Path constants
 # ---------------------------------------------------------------------------
 
-ROOT = find_repo_root()
+try:
+    ROOT = find_repo_root(_explicit_root_from_argv())
+except MogojError as exc:
+    print(f"Error: {exc}", file=sys.stderr)
+    sys.exit(exc.exit_code)
 
 INDEX_JSON = ROOT / "data" / "index" / "context-index.json"
 INDEX_MD = ROOT / "data" / "index" / "context-index.md"

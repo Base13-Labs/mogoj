@@ -21,8 +21,8 @@ from pathlib import Path
 # Import shared utilities
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
-    RAM_DIR, CURRENT_RAM as CURRENT, ARCHIVE_DIR,
-    mogoj_main,
+    ROOT, RAM_DIR, CURRENT_RAM as CURRENT, ARCHIVE_DIR,
+    mogoj_main, add_root_arguments, report_root, store_path,
 )
 
 
@@ -178,7 +178,7 @@ def cmd_archive(args):
     name = args.name
     if not name.endswith(".md"):
         name += ".md"
-    dest = ARCHIVE_DIR / name
+    dest = store_path(Path("data/ram/archive") / name)
 
     if dest.exists() and not args.force:
         print(f"Archive '{name}' already exists. Use --force to overwrite.")
@@ -373,7 +373,7 @@ def cmd_load(args):
     name = args.name
     if not name.endswith(".md"):
         name += ".md"
-    src = ARCHIVE_DIR / name
+    src = store_path(Path("data/ram/archive") / name)
 
     if not src.exists():
         print(f"Archive '{name}' not found.")
@@ -406,6 +406,7 @@ def main():
                "  python tools/ram.py clear --force\n"
                "  python tools/ram.py refresh --session path --auto\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("status", help="Show current RAM contents summary")
@@ -438,6 +439,7 @@ def main():
     p_load.add_argument("--force", "-f", action="store_true", help="Overwrite current RAM")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)

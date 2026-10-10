@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     ROOT, INDEX_JSON, INDEX_MD, SCAN_DIRS,
     extract_keywords, collect_md_files, relative_doc_path,
-    load_json, save_json, mogoj_main,
+    load_json, save_json, mogoj_main, add_root_arguments, report_root,
 )
 
 
@@ -223,6 +223,7 @@ def main():
                "  python tools/index.py sync\n"
                "  python tools/index.py stats\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     p_build = sub.add_parser("build", help="Scan docs and build context-index.json")
@@ -241,6 +242,7 @@ def main():
     sub.add_parser("fingerprint", help="SHA-256 fingerprint of index (one-line output)")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)
