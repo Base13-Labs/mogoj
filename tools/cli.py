@@ -294,9 +294,11 @@ def cmd_maintenance(args):
     arguments.append(args.command)
     if args.command == "rollback" and args.backup:
         arguments.extend(["--backup", args.backup])
-    output = run_tool(root, "migrate.py", arguments, capture=args.json)
+    output = run_tool(root, "migrate.py", arguments, capture=True)
     if args.json:
         emit({"ok": True, "root": str(root), "command": args.command, "output": output.strip()}, True)
+    elif output:
+        print(output, end="" if output.endswith("\n") else "\n")
 
 
 def build_parser():

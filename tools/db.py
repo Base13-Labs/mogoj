@@ -92,7 +92,9 @@ def get_conn():
     """Get a connection to the database."""
     if not DB_PATH.exists():
         raise PrereqError(f"Database not found: {DB_PATH}\nRun 'python3 tools/db.py init' first.")
-    return sqlite3.connect(str(DB_PATH))
+    connection = sqlite3.connect(str(DB_PATH), timeout=10)
+    connection.execute("PRAGMA busy_timeout=10000")
+    return connection
 
 
 def infer_doc_type(filepath, content):
@@ -132,7 +134,8 @@ def cmd_init(args):
     if DB_PATH.exists():
         DB_PATH.unlink()
 
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), timeout=10)
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(SCHEMA)
     conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('created', ?)",
                  (datetime.now().isoformat(),))
@@ -147,6 +150,9 @@ def cmd_init(args):
 def cmd_sync(args):
     """Scan markdown files and upsert into database."""
     conn = get_conn()
+    # Serialize writers while allowing WAL readers to continue. Without this,
+    # two agent saves can both observe a missing path and race on INSERT.
+    conn.execute("BEGIN IMMEDIATE")
 
     # Collect all markdown files
     all_dirs = [ROOT / "docs", ROOT / "data" / "sessions", ROOT / "data" / "ram"]
