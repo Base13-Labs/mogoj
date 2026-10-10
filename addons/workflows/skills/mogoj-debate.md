@@ -13,7 +13,7 @@ Examples:
 
 ## Step 0: Locate Memory Store
 
-The memory store is at `$MOGOJ_ROOT`. If unset, default to `~/code/brain/`. Debate outputs (convergence docs) are saved there.
+Use the store resolved by the `mogoj` CLI. Save debate outcomes only when the user explicitly asks.
 
 ### Pre-flight
 
