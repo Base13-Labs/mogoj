@@ -1,101 +1,107 @@
-# Mogoj (মগজ)
+# Mogoj
 
-**Portable memory system for AI agents.** Mogoj gives Claude Code, Codex, and other LLM-powered tools persistent, cross-session memory with keyword indexing, relationship graphs, and session management.
+Mogoj gives AI coding assistants private, durable memory on your machine—and recalls only the useful, source-cited context that fits your token budget.
 
-## What It Does
+> **Beta:** `v0.1.0-beta.1` is for early adopters. Back up important stores, review retrieved context before relying on it, and report bugs with synthetic data.
 
-- **Persist conversations** — save session summaries with keyword indexing
-- **Search memory** — full-text and keyword-based retrieval across all saved sessions
-- **RAM management** — live working memory for current/last session state
-- **Doc graph** — find relationships between documents via shared keywords
-- **Ingest external knowledge** — scan and import markdown from any source
-- **Optional workflows** — debates, planning, and autonomous task execution are separate add-ons
+![A terminal installs Mogoj, saves a decision, and recalls it](docs/assets/terminal-demo.gif)
 
-## Quick Start
+## First value in about 60 seconds
+
+On macOS or Linux, copy and paste:
 
 ```bash
-# Clone
-git clone https://github.com/Base13-Labs/mogoj.git ~/code/mogoj
-
-# Install skills (symlinks to ~/.claude/commands/)
-cd ~/code/mogoj && ./install.sh
-
-# Initialize a memory store
-mogoj init ~/code/brain
-# or set MOGOJ_ROOT manually:
-export MOGOJ_ROOT=~/code/brain
+curl -fsSL https://raw.githubusercontent.com/Base13-Labs/mogoj/main/install.sh | sh
+~/.local/bin/mogoj onboard
 ```
 
-## Architecture
+The installer explains what it creates. Onboarding asks where private memory should live, which agents you use, and whether to import existing Markdown. No repository clone, manual symlink, shell-profile edit, account, API key, or hosted database is required.
 
-```
-mogoj/                    # This repo — the engine
-├── skills/               # Slash commands for Claude Code
-│   ├── mogoj-save.md     # /mogoj-save — persist session
-│   ├── mogoj-search.md   # /mogoj-search — search memory
-│   ├── mogoj-show.md     # /mogoj-show — list commands + stats
-├── addons/               # Optional higher-permission workflows
-├── tools/                # Python CLI tools (stdlib only)
-│   ├── index.py          # Keyword index CRUD
-│   ├── search.py         # Full-text search
-│   ├── graph.py          # Doc relationship graph
-│   ├── ram.py            # RAM lifecycle
-│   └── ingest.py         # Import from external sources
-├── template/             # Empty directory structure for new stores
-└── install.sh            # Symlinks skills to ~/.claude/commands/
-```
-
-Your data lives separately (e.g., `~/code/brain/`):
-
-```
-brain/                    # Your memory store (private)
-├── data/
-│   ├── index/            # context-index.json + .md
-│   ├── ram/              # current.md + archive/
-│   └── sessions/         # saved session docs
-├── docs/
-│   ├── company/          # company-level context
-│   ├── projects/         # per-project briefs
-│   ├── decisions/        # decision logs
-│   └── people/           # character profiles
-└── imports/              # raw exports from external tools
-```
-
-## Skills
-
-| Command | What it does |
-|---------|-------------|
-| `/mogoj-save` | Persist session to memory (index + RAM) |
-| `/mogoj-search` | Search across all memory |
-| `/mogoj-show` | List all commands + memory stats |
-Optional debate, planning, and autonomous execution workflows are not installed
-by default. They are not required for memory capture or retrieval.
-
-## Tools
-
-All Python tools use stdlib only — no pip install needed. Python 3.9+.
+Save a decision and recall it:
 
 ```bash
-python3 tools/index.py build          # Scan docs, build keyword index
-python3 tools/index.py query chatx    # Look up a keyword
-python3 tools/index.py add sales doc  # Add keyword mapping
-python3 tools/search.py "query"       # Full-text search
-python3 tools/graph.py build          # Build relationship graph
-python3 tools/graph.py neighbors doc  # Find related docs
-python3 tools/ram.py status           # Check RAM state
-python3 tools/ingest.py scan ~/dir    # Scan external markdown
+~/.local/bin/mogoj save "We chose SQLite because memory must remain local." --title "Local search" --type decision
+~/.local/bin/mogoj rebuild
+~/.local/bin/mogoj search "Why did we choose SQLite?"
 ```
 
-## Configuration
+The answer is a bounded context packet with citations such as `docs/decisions/2026-10-10-local-search.md:L1-L3`, not a dump of every memory.
 
-Set `MOGOJ_ROOT` to point at your memory store:
+## Your data stays understandable
+
+Markdown is the source of truth. The local SQLite FTS5 database is a disposable search accelerator. Mogoj has no telemetry, cloud account, embedding API, or automatic network upload. New files and backups are private by default; common secret patterns are blocked before save.
+
+```text
+~/.mogoj/                  your private store
+├── .mogoj/                marker, migration state, backups
+├── docs/                  durable Markdown memories
+├── data/sessions/         session handoffs
+├── data/ram/              small active-memory pointers
+└── data/db/mogoj.db       rebuildable local search index
+```
+
+Read the [privacy and threat model](docs/security-model.md) before putting a store in Git or a cloud-synced folder.
+
+## Supported agents
+
+- CLI: works independently with any assistant or editor.
+- Claude Code: install the [validated Claude plugin](docs/claude-plugin.md).
+- Codex and supported ChatGPT plugin surfaces: use the [portable Agent Plugin](docs/codex-plugin.md).
+- Optional debate/planning/task-running workflows are a separate add-on; they do not ship in the memory core.
+
+See the [platform matrix](docs/platform-support.md) for tested operating systems, Python, SQLite, and integration versions.
+
+## How recall works
+
+Mogoj indexes Markdown locally with SQLite FTS5/BM25. Retrieval is progressive: a compact result index, one ranked snippet per document, then full content only when explicitly requested and still within budget. Recency, type, project, and relevance influence ranking. The default packet is capped at about 1,200 estimated tokens.
+
+Mogoj is not a generic vector database. It does not require embeddings, a model call, a server, chunk hosting, or opaque binary source data. Choose a vector database when you need semantic retrieval over very large corpora or a multi-user service. Choose Mogoj when humans should own readable files, citations and migrations matter, and the context window—not storage—is the scarce resource. See the [published beta benchmark](docs/beta-retrieval-benchmark.md).
+
+## Upgrade, migration, and rollback
+
+Re-run the installer to add a new engine version. Preview store changes before upgrading:
 
 ```bash
-export MOGOJ_ROOT=~/code/brain
+~/.local/bin/mogoj migrate --dry-run
+~/.local/bin/mogoj migrate
+~/.local/bin/mogoj doctor
 ```
 
-If unset, defaults to `~/code/brain`.
+Migration creates a timestamped private backup, stages SQLite separately, verifies integrity, and atomically replaces generated state. It never deletes Markdown. To restore generated state from the newest backup:
 
-## License
+```bash
+~/.local/bin/mogoj rollback
+```
 
-MIT
+## Five common problems
+
+1. **`mogoj: command not found`:** run `~/.local/bin/mogoj doctor`. The installer prints this full path specifically so no profile edit is required.
+2. **“No Mogoj store found”:** run `~/.local/bin/mogoj onboard`, or pass `--root "/your/store"` before the command.
+3. **Search says the index is missing:** run `~/.local/bin/mogoj rebuild`, then retry.
+4. **Doctor reports SQLite FTS5 unavailable:** install a supported Python build with FTS5, then run doctor again. Mogoj cannot emulate full-text search safely.
+5. **Save blocks a possible secret:** use `--redact`. Use `--allow-secrets` only after confirming the store and every backup/sync destination are private.
+
+For a corrupted index, run `mogoj rebuild`; for an interrupted migration, rerun it—the stale staging database is removed safely. Installation details and uninstall are in [the installation guide](docs/installation.md).
+
+## Honest beta limitations
+
+- Native Windows has a PowerShell launcher but not yet a one-command installer; WSL is the easiest Windows path.
+- Token counts use a deterministic character estimate, not a provider-specific tokenizer.
+- Search is lexical BM25, so differently worded concepts may require a second query.
+- No multi-device synchronization, encryption layer, GUI, hosted backup, or recovery service is included.
+- Codex marketplace distribution is repo-local until accepted into a public directory.
+- Three novice human installation sign-offs remain a release gate; the protocol is documented and results must not be fabricated.
+
+## Example and handoff
+
+Explore the fictional, non-sensitive [example store](examples/fictional-store) and the [before/after context handoff](docs/context-handoff-example.md). No Base13 Labs private memory is included.
+
+## Contributing and support
+
+- [Contributing](CONTRIBUTING.md)
+- [Support expectations](SUPPORT.md)
+- [Private vulnerability reporting](SECURITY.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Open an issue](https://github.com/Base13-Labs/mogoj/issues/new/choose)
+
+Mogoj (মগজ) means “brain” in Bengali. Copyright 2026 Base13 Labs; released under the [MIT License](LICENSE).
