@@ -18,6 +18,9 @@ auto_archive = true
 [search]
 context_lines = 1
 max_results = 50
+retrieval_token_budget = 1200
+chars_per_token = 4
+max_snippet_chars = 480
 
 [health]
 stale_days = 30
