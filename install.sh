@@ -1,11 +1,17 @@
 #!/bin/bash
-# Mogoj installer — symlinks skills to ~/.claude/commands/ and sets up MOGOJ_ROOT
+# Legacy Mogoj installer. The packaged CLI is the preferred installation path.
 
 set -e
 
 MOGOJ_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET_DIR="$HOME/.claude/commands"
 DEFAULT_ROOT="$HOME/code/brain"
+WITH_ADDONS=0
+
+if [ "${1:-}" = "--with-addons" ]; then
+  WITH_ADDONS=1
+  shift
+fi
 
 mkdir -p "$TARGET_DIR"
 
@@ -22,6 +28,16 @@ for skill in "$MOGOJ_DIR"/skills/*.md; do
   ((count++))
 done
 
+if [ "$WITH_ADDONS" -eq 1 ]; then
+  for skill in "$MOGOJ_DIR"/addons/workflows/skills/*.md; do
+    [ -f "$skill" ] || continue
+    name=$(basename "$skill")
+    ln -sf "$skill" "$TARGET_DIR/$name"
+    echo "  + $name (optional add-on)"
+    ((count++))
+  done
+fi
+
 echo ""
 echo "$count skills installed to $TARGET_DIR"
 
@@ -36,7 +52,7 @@ if [ -z "$MOGOJ_ROOT" ]; then
 fi
 
 # Initialize memory store if it doesn't exist
-if [ -n "$1" ]; then
+if [ -n "${1:-}" ]; then
   STORE_DIR="$1"
 elif [ -n "$MOGOJ_ROOT" ]; then
   STORE_DIR="$MOGOJ_ROOT"
