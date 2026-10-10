@@ -1,0 +1,15 @@
+{
+  "name": "mogoj",
+  "displayName": "Mogoj Local Memory",
+  "version": "0.1.0-beta.1",
+  "description": "Private, local-first memory with bounded, cited recall",
+  "author": {
+    "name": "Base13 Labs",
+    "url": "https://github.com/Base13-Labs"
+  },
+  "homepage": "https://github.com/Base13-Labs/mogoj",
+  "repository": "https://github.com/Base13-Labs/mogoj",
+  "license": "MIT",
+  "keywords": ["memory", "local-first", "search", "sqlite"],
+  "defaultEnabled": true
+}

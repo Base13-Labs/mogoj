@@ -1,0 +1,27 @@
+name: Installation help
+description: Get help with setup, upgrades, or integrations.
+title: "[Install]: "
+labels: [installation]
+body:
+  - type: dropdown
+    attributes:
+      label: Platform
+      options: [macOS, Linux, Windows WSL, Windows native, Other]
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What command did you run?
+      description: Remove usernames, private paths, credentials, and memory content.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Sanitized doctor output
+      description: Paste mogoj --json doctor output after removing private paths.
+  - type: checkboxes
+    attributes:
+      label: Privacy check
+      options:
+        - label: I did not attach a real store, database, backup, token, or confidential log.
+          required: true

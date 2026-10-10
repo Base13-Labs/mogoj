@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Debate"
+  short_description: "Compare competing perspectives explicitly"
+  default_prompt: "Use $mogoj-debate to compare the strongest options."

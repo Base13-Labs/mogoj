@@ -4,15 +4,13 @@ List all available Mogoj and project commands with descriptions.
 
 ## Step 0: Locate Memory Store
 
-The memory store is at `$MOGOJ_ROOT`. If unset, default to `~/code/brain/`. All paths below are relative to this root.
-
-Determine the mogoj tools/skills location: check `$MOGOJ_TOOLS` first, then `~/code/mogoj/`, then `$MOGOJ_ROOT`.
+Use `mogoj --json status` and `mogoj --json doctor` to inspect the configured store.
 
 ## Instructions
 
 Find all Mogoj skills by running:
 ```bash
-ls ~/code/mogoj/skills/mogoj-*.md 2>/dev/null || ls $MOGOJ_ROOT/skills/mogoj-*.md 2>/dev/null
+mogoj --json status
 ```
 
 Also find any project-specific skills:

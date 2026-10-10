@@ -8,27 +8,18 @@ Commands:
 """
 
 import argparse
-import os
 import re
 import shutil
 import sys
-from datetime import date
 from pathlib import Path
 
-
-def find_repo_root():
-    start = Path.cwd()
-    for p in [start] + list(start.parents):
-        if (p / ".git").exists() or (p / "CLAUDE.md").exists():
-            return p
-    script = Path(__file__).resolve().parent.parent
-    if (script / ".git").exists() or (script / "CLAUDE.md").exists():
-        return script
-    print("Error: could not find repo root.", file=sys.stderr)
-    sys.exit(1)
-
-
-ROOT = find_repo_root()
+# Import shared utilities
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import (
+    ROOT, extract_keywords, extract_title, extract_date,
+    relative_path, mogoj_main, MAX_KEYWORDS_PER_DOC,
+    add_root_arguments, report_root, store_path,
+)
 
 
 def extract_metadata(filepath):
@@ -62,22 +53,13 @@ def extract_metadata(filepath):
                     key, val = line.split(":", 1)
                     meta["frontmatter"][key.strip()] = val.strip()
 
-    # Extract title (first # heading)
-    for line in lines:
-        if line.startswith("# "):
-            meta["title"] = line[2:].strip()
-            break
+    # Extract title
+    meta["title"] = extract_title(content)
+    if meta["title"] == "(untitled)":
+        meta["title"] = None
 
-    # Detect date from filename or content
-    date_match = re.search(r"(\d{4}-\d{2}-\d{2})", filepath.name)
-    if date_match:
-        meta["date"] = date_match.group(1)
-    else:
-        for line in lines[:20]:
-            date_match = re.search(r"(\d{4}-\d{2}-\d{2})", line)
-            if date_match:
-                meta["date"] = date_match.group(1)
-                break
+    # Detect date
+    meta["date"] = extract_date(content, filepath.name)
 
     # Infer type from content signals
     content_lower = content.lower()
@@ -92,18 +74,9 @@ def extract_metadata(filepath):
     else:
         meta["type"] = "general"
 
-    # Extract keywords from headings and bold
-    kws = set()
-    for match in re.finditer(r"^#{1,6}\s+(.+)$", content, re.MULTILINE):
-        words = re.findall(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", match.group(1).lower())
-        for w in words:
-            if len(w) > 2 and w not in ("the", "and", "for", "with", "from", "that", "this"):
-                kws.add(w)
-    for match in re.finditer(r"\*\*([^*]+)\*\*", content):
-        slug = re.sub(r"[^a-z0-9]+", "-", match.group(1).strip().lower()).strip("-")
-        if slug and len(slug) > 2:
-            kws.add(slug)
-    meta["keywords"] = sorted(kws)[:20]  # Cap at 20
+    # Extract keywords using shared function
+    kws = extract_keywords(filepath)
+    meta["keywords"] = sorted(kws)[:MAX_KEYWORDS_PER_DOC]
 
     return meta
 
@@ -174,9 +147,8 @@ def cmd_import(args):
 
     meta = extract_metadata(src)
 
-    # Determine destination
     if args.dest:
-        dest = ROOT / args.dest
+        dest = store_path(args.dest)
     elif args.type:
         type_dirs = {
             "project": ROOT / "docs" / "projects",
@@ -189,22 +161,15 @@ def cmd_import(args):
     else:
         dest = suggest_destination(meta)
 
-    # Check if destination exists
     if dest.exists() and not args.force:
         print(f"Destination already exists: {dest}")
         print("Use --force to overwrite.")
         return
 
-    # Create parent dirs
     dest.parent.mkdir(parents=True, exist_ok=True)
-
-    # Copy
     shutil.copy2(src, dest)
 
-    try:
-        dest_rel = dest.relative_to(ROOT)
-    except ValueError:
-        dest_rel = dest
+    dest_rel = relative_path(dest)
 
     print(f"Imported: {src.name}")
     print(f"     To: {dest_rel}")
@@ -214,6 +179,7 @@ def cmd_import(args):
     print(f"\nTo index: python tools/index.py add <keyword> {dest_rel}")
 
 
+@mogoj_main
 def main():
     parser = argparse.ArgumentParser(
         description="Mogoj Ingest — scan and import markdown into brain",
@@ -225,6 +191,7 @@ def main():
                "  python tools/ingest.py import ~/exports/decision.md --type decision\n"
                "  python tools/ingest.py import ~/exports/doc.md --dest docs/projects/foo.md\n",
     )
+    add_root_arguments(parser)
     sub = parser.add_subparsers(dest="command")
 
     p_scan = sub.add_parser("scan", help="Scan a directory of markdown files")
@@ -239,6 +206,7 @@ def main():
     p_import.add_argument("--force", "-f", action="store_true", help="Overwrite existing files")
 
     args = parser.parse_args()
+    report_root(args)
     if not args.command:
         parser.print_help()
         sys.exit(1)

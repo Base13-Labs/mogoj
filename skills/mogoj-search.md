@@ -13,9 +13,7 @@ Examples:
 
 ## Step 0: Locate Memory Store
 
-The memory store is at `$MOGOJ_ROOT`. If unset, default to `~/code/brain/`. All paths below are relative to this root.
-
-Determine the mogoj tools location: check `$MOGOJ_TOOLS` first, then `~/code/mogoj/tools/`, then look for a `tools/` directory at `$MOGOJ_ROOT`.
+Use `mogoj --json search` so recall remains bounded and returns stable source citations.
 
 ## Instructions
 

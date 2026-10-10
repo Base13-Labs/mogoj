@@ -1,0 +1,19 @@
+{
+  "name": "base13-labs",
+  "description": "Open-source agent tools from Base13 Labs",
+  "owner": {
+    "name": "Base13 Labs"
+  },
+  "plugins": [
+    {
+      "name": "mogoj",
+      "source": "./plugins/mogoj",
+      "description": "Private, local-first memory with bounded, cited recall"
+    },
+    {
+      "name": "mogoj-workflows",
+      "source": "./plugins/mogoj-workflows",
+      "description": "Optional debate, planning, and task-execution skills"
+    }
+  ]
+}

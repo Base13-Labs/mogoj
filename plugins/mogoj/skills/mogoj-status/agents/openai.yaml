@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Status"
+  short_description: "Inspect local memory status and health"
+  default_prompt: "Use $mogoj-status to inspect my local memory store."

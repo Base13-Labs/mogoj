@@ -1,0 +1,20 @@
+{
+  "name": "base13-labs",
+  "interface": {
+    "displayName": "Base13 Labs"
+  },
+  "plugins": [
+    {
+      "name": "mogoj",
+      "source": {
+        "source": "local",
+        "path": "./plugins/mogoj"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

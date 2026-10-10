@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a reproducible problem using synthetic data.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: checkboxes
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials, private memories, database files, and personal information.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+  - type: input
+    attributes:
+      label: Mogoj version
+      placeholder: Output of mogoj version
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include expected behavior and minimal reproduction steps.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Sanitized doctor output
+      description: Paste mogoj --json doctor output after removing private paths.

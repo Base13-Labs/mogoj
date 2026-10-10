@@ -1,6 +1,12 @@
-# Mogoj tools — Python CLI scripts for memory management
+# Mogoj tools — Python CLI scripts for brain memory management
 #
 # No external dependencies required. All tools use Python 3 stdlib only.
 # Just run with: python3 tools/<script>.py
 #
-# Tested with Python 3.9+
+# Requirements:
+#   Python 3.9+
+#   SQLite 3.9+ with FTS5 support (system Python satisfies this)
+#   configparser (stdlib, Python 3.9+)
+#
+# Verify FTS5: python3 -c "import sqlite3; print(sqlite3.sqlite_version)"
+# Should show 3.9.0+ (your system has 3.43.2)

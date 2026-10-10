@@ -1,0 +1,13 @@
+{
+  "name": "mogoj-workflows",
+  "displayName": "Mogoj Optional Workflows",
+  "version": "0.1.0-beta.1",
+  "description": "Optional debate, planning, and task-execution skills",
+  "author": {
+    "name": "Base13 Labs",
+    "url": "https://github.com/Base13-Labs"
+  },
+  "repository": "https://github.com/Base13-Labs/mogoj",
+  "license": "MIT",
+  "defaultEnabled": true
+}

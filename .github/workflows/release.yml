@@ -1,0 +1,41 @@
+name: Release prerelease
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+      - name: Require an annotated, GitHub-verified signed tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" --jq .object.sha)
+          verified=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_sha}" --jq .verification.verified)
+          test "$verified" = "true"
+      - name: Verify version matches tag
+        run: python scripts/check_version.py --tag "$GITHUB_REF_NAME"
+      - name: Audit release inputs
+        run: python scripts/audit_release.py
+      - name: Run complete test and clean-machine smoke suite
+        run: python -m unittest discover -s tests -v
+      - name: Build deterministic artifacts, SBOM, and checksums
+        run: python scripts/build_release.py
+      - name: Verify checksums
+        working-directory: dist
+        run: sha256sum --check SHA256SUMS
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --prerelease --title "Mogoj $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md

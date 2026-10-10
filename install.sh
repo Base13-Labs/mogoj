@@ -1,74 +1,70 @@
-#!/bin/bash
-# Legacy Mogoj installer. The packaged CLI is the preferred installation path.
+#!/bin/sh
+set -eu
 
-set -e
+PREFIX=${MOGOJ_INSTALL_DIR:-"$HOME/.local/share/mogoj"}
+BIN_DIR=${MOGOJ_BIN_DIR:-"$HOME/.local/bin"}
+SOURCE=""
+ASSUME_YES=0
+ONBOARD=1
+REPOSITORY_URL="https://github.com/Base13-Labs/mogoj"
 
-MOGOJ_DIR="$(cd "$(dirname "$0")" && pwd)"
-TARGET_DIR="$HOME/.claude/commands"
-DEFAULT_ROOT="$HOME/code/brain"
-WITH_ADDONS=0
-
-if [ "${1:-}" = "--with-addons" ]; then
-  WITH_ADDONS=1
-  shift
-fi
-
-mkdir -p "$TARGET_DIR"
-
-echo "Mogoj (মগজ) — installing memory system"
-echo ""
-
-# Install skills
-count=0
-for skill in "$MOGOJ_DIR"/skills/*.md; do
-  [ -f "$skill" ] || continue
-  name=$(basename "$skill")
-  ln -sf "$skill" "$TARGET_DIR/$name"
-  echo "  + $name"
-  ((count++))
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --prefix) PREFIX=$2; shift 2 ;;
+    --bin-dir) BIN_DIR=$2; shift 2 ;;
+    --source) SOURCE=$2; shift 2 ;;
+    --yes) ASSUME_YES=1; shift ;;
+    --no-onboard) ONBOARD=0; shift ;;
+    --help) echo "Usage: install.sh [--yes] [--no-onboard] [--prefix DIR] [--bin-dir DIR]"; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; exit 2 ;;
+  esac
 done
 
-if [ "$WITH_ADDONS" -eq 1 ]; then
-  for skill in "$MOGOJ_DIR"/addons/workflows/skills/*.md; do
-    [ -f "$skill" ] || continue
-    name=$(basename "$skill")
-    ln -sf "$skill" "$TARGET_DIR/$name"
-    echo "  + $name (optional add-on)"
-    ((count++))
-  done
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || true)
+if [ -z "$SOURCE" ] && [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/VERSION" ]; then SOURCE=$SCRIPT_DIR; fi
+
+TEMP_DIR=""
+cleanup() { if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then rm -rf -- "$TEMP_DIR"; fi; }
+trap cleanup EXIT HUP INT TERM
+
+if [ -z "$SOURCE" ]; then
+  command -v curl >/dev/null 2>&1 || { echo "Mogoj needs curl. Install curl, then retry." >&2; exit 4; }
+  TEMP_DIR=$(mktemp -d)
+  echo "Downloading Mogoj from $REPOSITORY_URL over HTTPS..."
+  curl -fsSL "$REPOSITORY_URL/archive/refs/heads/main.tar.gz" -o "$TEMP_DIR/mogoj.tar.gz" || {
+    echo "Download failed. Check your connection, then retry the same command." >&2; exit 4;
+  }
+  tar -xzf "$TEMP_DIR/mogoj.tar.gz" -C "$TEMP_DIR"
+  SOURCE=$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d -name 'mogoj-*' | head -n 1)
 fi
 
-echo ""
-echo "$count skills installed to $TARGET_DIR"
-
-# Set up MOGOJ_ROOT if not already set
-if [ -z "$MOGOJ_ROOT" ]; then
-  echo ""
-  echo "MOGOJ_ROOT not set. Add to your shell profile:"
-  echo ""
-  echo "  export MOGOJ_ROOT=$DEFAULT_ROOT"
-  echo "  export MOGOJ_TOOLS=$MOGOJ_DIR/tools"
-  echo ""
+if [ ! -f "$SOURCE/VERSION" ] || [ ! -f "$SOURCE/bin/mogoj" ]; then
+  echo "The package is incomplete; VERSION or bin/mogoj is missing." >&2; exit 3
 fi
 
-# Initialize memory store if it doesn't exist
-if [ -n "${1:-}" ]; then
-  STORE_DIR="$1"
-elif [ -n "$MOGOJ_ROOT" ]; then
-  STORE_DIR="$MOGOJ_ROOT"
-else
-  STORE_DIR="$DEFAULT_ROOT"
+VERSION=$(sed -n '1p' "$SOURCE/VERSION")
+DESTINATION="$PREFIX/$VERSION"
+echo "Mogoj $VERSION will create:"
+echo "  Engine:  $DESTINATION"
+echo "  Command: $BIN_DIR/mogoj"
+echo "Memory is separate and survives upgrades and uninstall."
+if [ "$ASSUME_YES" -ne 1 ] && [ -t 0 ]; then
+  printf "Continue? [Y/n] "; read answer
+  case "$answer" in n|N|no|NO) echo "Installation cancelled."; exit 0 ;; esac
 fi
 
-if [ ! -d "$STORE_DIR/data" ]; then
-  echo "Initializing memory store at $STORE_DIR..."
-  cp -r "$MOGOJ_DIR/template/"* "$STORE_DIR/" 2>/dev/null || true
-  mkdir -p "$STORE_DIR/data/index" "$STORE_DIR/data/ram/archive" "$STORE_DIR/data/sessions"
-  mkdir -p "$STORE_DIR/docs/company" "$STORE_DIR/docs/projects" "$STORE_DIR/docs/decisions" "$STORE_DIR/docs/people" "$STORE_DIR/docs/intake"
-  mkdir -p "$STORE_DIR/imports/chatgpt" "$STORE_DIR/imports/claude"
-  mkdir -p "$STORE_DIR/prompts"
-  echo "  Memory store initialized at $STORE_DIR"
+mkdir -p "$PREFIX" "$BIN_DIR"
+if [ ! -d "$DESTINATION" ]; then
+  STAGING="$PREFIX/.install-$VERSION-$$"
+  cp -R "$SOURCE" "$STAGING"
+  mv "$STAGING" "$DESTINATION"
 fi
+ln -sfn "$DESTINATION/bin/mogoj" "$BIN_DIR/mogoj"
+chmod +x "$DESTINATION/bin/mogoj" "$DESTINATION/tools/cli.py"
 
-echo ""
-echo "Done. Run /mogoj-show in Claude Code to verify."
+echo "Installed successfully."
+case ":$PATH:" in
+  *":$BIN_DIR:"*) COMMAND=mogoj ;;
+  *) COMMAND="$BIN_DIR/mogoj"; echo "Use the full command below; no shell-profile edit is required." ;;
+esac
+if [ "$ONBOARD" -eq 1 ] && [ -t 0 ]; then "$BIN_DIR/mogoj" onboard; else echo "Start here: $COMMAND onboard"; fi

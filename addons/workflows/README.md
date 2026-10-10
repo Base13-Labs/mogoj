@@ -11,7 +11,7 @@ tasks autonomously; none is required to save, search, or maintain memory.
 Legacy installation:
 
 ```bash
-./install.sh --with-addons ~/code/brain
+claude plugin install mogoj-workflows@base13-labs
 ```
 
 Removing this add-on directory or its command links never removes a Mogoj

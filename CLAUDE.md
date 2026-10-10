@@ -11,9 +11,9 @@ Portable memory system for AI agents. Powered by **Mogoj** (মগজ — Bengal
 
 ## Memory Store Location
 
-The memory store (where your data lives) is at `$MOGOJ_ROOT`. If unset, defaults to `~/code/brain`.
+The memory store is selected by `--root`, `$MOGOJ_ROOT`, a validated parent marker, or the initialized `~/.mogoj` default.
 
-Skills and tools auto-detect: `$MOGOJ_ROOT` → `~/code/brain` → walk up from cwd.
+Tools never infer a store merely from `.git` or `CLAUDE.md`.
 
 ## Directory Structure
 
