@@ -8,141 +8,37 @@ Commands:
   add <kw> <doc>     Add a keyword → doc mapping
   sync               Regenerate context-index.md from context-index.json
   stats              Show index statistics
+  fingerprint        SHA-256 fingerprint of index (one-line output)
 """
 
 import argparse
+import hashlib
 import json
-import os
-import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-
-def find_repo_root():
-    """Walk up from cwd or script dir to find the repo root (contains .git or CLAUDE.md)."""
-    start = Path.cwd()
-    for p in [start] + list(start.parents):
-        if (p / ".git").exists() or (p / "CLAUDE.md").exists():
-            return p
-    # Fallback: script location
-    script = Path(__file__).resolve().parent.parent
-    if (script / ".git").exists() or (script / "CLAUDE.md").exists():
-        return script
-    print("Error: could not find repo root.", file=sys.stderr)
-    sys.exit(1)
-
-
-ROOT = find_repo_root()
-INDEX_JSON = ROOT / "data" / "index" / "context-index.json"
-INDEX_MD = ROOT / "data" / "index" / "context-index.md"
-
-SCAN_DIRS = [
-    ROOT / "docs",
-    ROOT / "data" / "sessions",
-]
+# Import shared utilities
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import (
+    ROOT, INDEX_JSON, INDEX_MD, SCAN_DIRS,
+    extract_keywords, collect_md_files, relative_doc_path,
+    load_json, save_json, mogoj_main,
+)
 
 
 def load_index():
     """Load the JSON index, return dict of keyword -> list of doc paths."""
-    if INDEX_JSON.exists():
-        with open(INDEX_JSON, "r") as f:
-            return json.load(f)
-    return {}
+    data = load_json(INDEX_JSON)
+    return data if data is not None else {}
 
 
 def save_index(index):
-    """Save the JSON index."""
-    INDEX_JSON.parent.mkdir(parents=True, exist_ok=True)
-    # Sort keys for deterministic output
+    """Save the JSON index with sorted keys and deduplicated doc lists."""
     sorted_index = dict(sorted(index.items()))
     for k in sorted_index:
         sorted_index[k] = sorted(set(sorted_index[k]))
-    with open(INDEX_JSON, "w") as f:
-        json.dump(sorted_index, f, indent=2)
-
-
-def relative_doc_path(filepath):
-    """Return a doc path relative to the repo root's docs/ or data/ parent, matching index format."""
-    fp = Path(filepath).resolve()
-    # Try relative to ROOT/docs first
-    try:
-        rel = fp.relative_to(ROOT / "docs")
-        return str(rel)
-    except ValueError:
-        pass
-    # Try relative to ROOT/data
-    try:
-        rel = fp.relative_to(ROOT / "data")
-        return str(rel)
-    except ValueError:
-        pass
-    # Try relative to ROOT
-    try:
-        return str(fp.relative_to(ROOT))
-    except ValueError:
-        return str(fp)
-
-
-def extract_keywords(filepath):
-    """Extract keywords from a markdown file: headings, bold terms, frontmatter tags."""
-    keywords = set()
-    try:
-        with open(filepath, "r", errors="replace") as f:
-            content = f.read()
-    except (OSError, IOError):
-        return keywords
-
-    # Extract from headings (# Heading Text)
-    for match in re.finditer(r"^#{1,6}\s+(.+)$", content, re.MULTILINE):
-        heading = match.group(1).strip()
-        # Skip generic headings
-        if heading.lower() in ("summary", "overview", "notes", "context", "details",
-                                "background", "references", "links", "appendix"):
-            continue
-        # Slugify heading into keywords
-        words = re.findall(r"[a-zA-Z0-9]+(?:[-_][a-zA-Z0-9]+)*", heading.lower())
-        for w in words:
-            if len(w) > 2 and w not in ("the", "and", "for", "with", "from", "that", "this", "are", "was", "has", "have"):
-                keywords.add(w)
-
-    # Extract bold terms (**term**)
-    for match in re.finditer(r"\*\*([^*]+)\*\*", content):
-        term = match.group(1).strip().lower()
-        # Slugify
-        slug = re.sub(r"[^a-z0-9]+", "-", term).strip("-")
-        if slug and len(slug) > 2:
-            keywords.add(slug)
-        # Also add individual words if multi-word
-        words = re.findall(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", term)
-        for w in words:
-            if len(w) > 2 and w not in ("the", "and", "for", "with", "from", "that", "this", "are", "was", "has", "have"):
-                keywords.add(w)
-
-    # Extract frontmatter tags (tags: [a, b, c] or keywords: ...)
-    fm_match = re.match(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
-    if fm_match:
-        fm = fm_match.group(1)
-        for line in fm.split("\n"):
-            if re.match(r"(tags|keywords)\s*:", line, re.IGNORECASE):
-                vals = re.findall(r"[a-zA-Z0-9][-a-zA-Z0-9_]*", line.split(":", 1)[1])
-                for v in vals:
-                    v = v.lower()
-                    if len(v) > 2:
-                        keywords.add(v)
-
-    return keywords
-
-
-def collect_md_files():
-    """Collect all .md files from scan directories."""
-    files = []
-    for d in SCAN_DIRS:
-        if not d.exists():
-            continue
-        for f in d.rglob("*.md"):
-            files.append(f)
-    return files
+    save_json(INDEX_JSON, sorted_index, sort_keys=False)
 
 
 def cmd_build(args):
@@ -297,6 +193,24 @@ def cmd_stats(args):
             print(f"  {count:3d}  {doc}")
 
 
+def cmd_fingerprint(args):
+    """Compute SHA-256 fingerprint of the index without loading it into agent context."""
+    index = load_index()
+    if not index:
+        print("empty 0 0")
+        return
+
+    total_kw = len(index)
+    all_docs = set()
+    for docs in index.values():
+        all_docs.update(docs)
+
+    content = json.dumps(index, sort_keys=True).encode()
+    fp = hashlib.sha256(content).hexdigest()[:12]
+    print(f"{fp} {total_kw} {len(all_docs)}")
+
+
+@mogoj_main
 def main():
     parser = argparse.ArgumentParser(
         description="Mogoj Index — keyword-to-doc context index manager",
@@ -324,6 +238,7 @@ def main():
 
     sub.add_parser("sync", help="Regenerate context-index.md from context-index.json")
     sub.add_parser("stats", help="Show index statistics")
+    sub.add_parser("fingerprint", help="SHA-256 fingerprint of index (one-line output)")
 
     args = parser.parse_args()
     if not args.command:
@@ -336,6 +251,7 @@ def main():
         "add": cmd_add,
         "sync": cmd_sync,
         "stats": cmd_stats,
+        "fingerprint": cmd_fingerprint,
     }
     commands[args.command](args)
 
