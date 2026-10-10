@@ -13,19 +13,5 @@
   "keywords": ["memory", "automatic", "local-first", "search", "sqlite"],
   "defaultEnabled": true,
   "skills": "./plugins/mogoj/skills/",
-  "hooks": "./plugins/mogoj/hooks/hooks.json",
-  "userConfig": {
-    "mode": {
-      "type": "string",
-      "title": "Memory mode",
-      "description": "auto saves durable outcomes; confirm asks first; manual only saves when requested",
-      "default": "auto"
-    },
-    "memory_path": {
-      "type": "string",
-      "title": "Memory location",
-      "description": "Private Mogoj store path; ~ expands to your home directory",
-      "default": "~/.mogoj"
-    }
-  }
+  "hooks": "./plugins/mogoj/hooks/hooks.json"
 }

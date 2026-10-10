@@ -25,7 +25,11 @@ class AutomaticMemoryTests(unittest.TestCase):
     def hook(self, event, payload, mode="auto", store=None):
         env = os.environ.copy()
         env["MOGOJ_ROOT"] = str(store or self.store)
-        env["MOGOJ_AUTOMATION_MODE"] = mode
+        if mode is None:
+            env.pop("MOGOJ_AUTOMATION_MODE", None)
+            env.pop("CLAUDE_PLUGIN_OPTION_MODE", None)
+        else:
+            env["MOGOJ_AUTOMATION_MODE"] = mode
         result = subprocess.run(
             [sys.executable, str(HOOK), event],
             env=env,
@@ -60,9 +64,10 @@ class AutomaticMemoryTests(unittest.TestCase):
             "session_id": "session-1",
             "cwd": str(self.project),
             "source": "startup",
-        })
+        }, mode=None)
         self.assertTrue((self.store / ".mogoj/store.json").is_file())
         self.assertTrue((self.store / "data/db/mogoj.db").is_file())
+        self.assertIn("mode = auto", (self.store / "config.ini").read_text())
         context = output["hookSpecificOutput"]["additionalContext"]
         self.assertIn("automatic memory is active", context)
         self.assertIn("initialized automatically", context)

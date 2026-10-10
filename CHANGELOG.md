@@ -13,6 +13,7 @@ All notable changes are documented here. Mogoj uses semantic versioning; the sin
 ### Changed
 
 - The Claude plugin now packages the canonical runtime, so users do not need a separate CLI installation.
+- Claude plugin installation no longer asks configuration questions; it starts in `auto` mode with `~/.mogoj`, and users can change behavior later in `config.ini`.
 
 ## [0.1.0-beta.1] - 2026-10-10
 
