@@ -141,7 +141,10 @@ def rebuild_database(dry_run=False, label="rebuild"):
     env["MOGOJ_DB_PATH"] = str(stage)
     command = [sys.executable, str(Path(__file__).with_name("db.py")), "migrate"]
     try:
-        subprocess.run(command, env=env, check=True)
+        completed = subprocess.run(
+            command, env=env, check=True, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
         with sqlite3.connect(str(stage)) as connection:
             result = connection.execute("PRAGMA integrity_check").fetchone()
         if not result or result[0] != "ok":
@@ -157,6 +160,11 @@ def rebuild_database(dry_run=False, label="rebuild"):
             "status": "complete", "operation": label,
             "backup": str(backup), "completed_at": datetime.now(timezone.utc).isoformat(),
         })
+    except subprocess.CalledProcessError as exc:
+        if stage.exists():
+            stage.unlink()
+        detail = (exc.stderr or exc.stdout or "database migration failed").strip()
+        raise MogojError(detail, exc.returncode) from exc
     except Exception:
         if stage.exists():
             stage.unlink()
