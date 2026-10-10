@@ -20,6 +20,13 @@ ENGINE = Path(__file__).resolve().parents[1]
 VERSION = (ENGINE / "VERSION").read_text().strip()
 MARKER = Path(".mogoj/store.json")
 
+if sys.version_info < (3, 9):
+    print(
+        "Mogoj requires Python 3.9 or newer. Install a supported Python and retry.",
+        file=sys.stderr,
+    )
+    sys.exit(4)
+
 
 class CliError(Exception):
     pass
