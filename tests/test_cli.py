@@ -53,6 +53,14 @@ class CliJourneyTests(unittest.TestCase):
         version = self.run_cli("--json", "version")
         self.assertEqual(json.loads(version.stdout)["version"], "0.1.0-beta.1")
 
+    def test_store_path_with_spaces_and_unicode(self):
+        self.root = Path(self.temp.name) / "Memory Store মগজ space"
+        self.run_cli("init")
+        self.run_cli("save", "Unicode paths work", "--title", "বাংলা memory")
+        self.run_cli("rebuild")
+        result = self.run_cli("--json", "search", "Unicode")
+        self.assertTrue(json.loads(result.stdout)["within_budget"])
+
 
 if __name__ == "__main__":
     unittest.main()
