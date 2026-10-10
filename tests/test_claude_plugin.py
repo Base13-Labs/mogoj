@@ -18,7 +18,7 @@ class ClaudePluginTests(unittest.TestCase):
         self.assertEqual(manifest["name"], "mogoj")
         self.assertEqual(marketplace["plugins"][0]["name"], "mogoj")
         self.assertEqual(marketplace["plugins"][0]["source"], "./")
-        self.assertEqual(manifest["userConfig"]["mode"]["default"], "auto")
+        self.assertNotIn("userConfig", manifest)
         hooks = json.loads((PLUGIN / "hooks" / "hooks.json").read_text())["hooks"]
         self.assertEqual(
             set(hooks),
@@ -30,6 +30,7 @@ class ClaudePluginTests(unittest.TestCase):
         for skill in skills:
             content = skill.read_text()
             self.assertIn("mogoj", content.lower())
+            self.assertNotIn("user_config", content)
             self.assertNotIn("~/code/", content)
             self.assertNotIn("[TODO", content)
 
@@ -87,8 +88,9 @@ class ClaudePluginTests(unittest.TestCase):
                 os.environ,
                 CLAUDE_PLUGIN_ROOT=str(REPO),
                 MOGOJ_ROOT=str(store),
-                MOGOJ_AUTOMATION_MODE="auto",
             )
+            env.pop("MOGOJ_AUTOMATION_MODE", None)
+            env.pop("CLAUDE_PLUGIN_OPTION_MODE", None)
             result = subprocess.run(
                 ["node", str(PLUGIN / "hooks" / "run.cjs"), "session-start"],
                 env=env,

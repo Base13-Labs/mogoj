@@ -11,6 +11,8 @@ claude plugin install mogoj@base13-labs
 
 Start a new Claude Code session and work normally. The first session creates the private `~/.mogoj` store and local index automatically. The optional standalone CLI is documented in `docs/installation.md`.
 
+There is no Mogoj setup prompt during installation. The plugin starts in `auto` mode. To change recall or saving behavior later, edit `~/.mogoj/config.ini` and choose `auto`, `confirm`, `manual`, or `off` under `[automation]`.
+
 Existing standalone CLI users should run `mogoj migrate --dry-run`, then `mogoj migrate`. A timestamped backup is created first. Use `mogoj rollback` to restore generated state; Markdown is never deleted automatically.
 
 ## Supported environments

@@ -19,6 +19,8 @@ Start a new Claude Code session. The plugin defaults to:
 
 The first session creates the store and SQLite index automatically. The plugin package contains the runtime, so installing the plugin does not require a separate Mogoj CLI installation.
 
+Installation does not ask the user to choose a mode or memory path. The zero-configuration defaults are `auto` and `~/.mogoj`.
+
 ## What happens automatically
 
 ### Session start
@@ -44,7 +46,12 @@ Mogoj stores the final handoff, not the raw transcript. Automatic capture is int
 
 ## Modes
 
-Configure the plugin through Claude Code's plugin configuration:
+Mogoj starts in `auto` mode. To change it later, edit `~/.mogoj/config.ini` and change `mode` in the `[automation]` section:
+
+```ini
+[automation]
+mode = confirm
+```
 
 | Mode | Recall | Saving |
 |---|---|---|
@@ -53,7 +60,7 @@ Configure the plugin through Claude Code's plugin configuration:
 | `manual` | Only targeted skill use | Only when the user explicitly asks |
 | `off` | Disabled | Disabled; does not initialize a store |
 
-The mode can also be set in the store's `config.ini` under `[automation]`, or temporarily with `MOGOJ_AUTOMATION_MODE`. `MOGOJ_ROOT` overrides the configured memory path.
+Use `auto`, `confirm`, `manual`, or `off`. Changes apply on the next hook invocation; restarting Claude Code is the clearest way to begin a session consistently in the new mode. For advanced or temporary overrides, `MOGOJ_AUTOMATION_MODE` changes the mode and `MOGOJ_ROOT` selects a different initialized store path.
 
 ## Manual and recovery skills
 

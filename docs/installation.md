@@ -9,7 +9,7 @@ claude plugin marketplace add Base13-Labs/mogoj
 claude plugin install mogoj@base13-labs
 ```
 
-Start a new Claude Code session and work normally. The plugin contains the Mogoj runtime, initializes `~/.mogoj` on first use, recalls relevant source-cited context automatically, and checkpoints meaningful completed work. No separate Python package, `mogoj` command, onboarding wizard, account, or API key is required.
+The installer asks for no Mogoj settings. Start a new Claude Code session and work normally: the plugin defaults to `auto`, contains the Mogoj runtime, initializes `~/.mogoj` on first use, recalls relevant source-cited context automatically, and checkpoints meaningful completed work. No separate Python package, `mogoj` command, onboarding wizard, account, or API key is required. To change mode or budgets later, edit `~/.mogoj/config.ini`.
 
 See [Automatic memory in Claude Code](claude-plugin.md) for modes, budgets, lifecycle behavior, update, disable, and uninstall instructions.
 

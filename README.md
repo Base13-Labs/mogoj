@@ -15,7 +15,9 @@ claude plugin marketplace add Base13-Labs/mogoj
 claude plugin install mogoj@base13-labs
 ```
 
-Then use Claude Code normally. On the next session Mogoj creates a private `~/.mogoj` store, builds the local index, recalls relevant context for each prompt, and checkpoints meaningful completed work. You do not have to run `mogoj`, ask Claude to remember, or paste previous-session context. Plugin settings expose `auto`, `confirm`, and `manual` modes plus a custom store path.
+Then use Claude Code normally. Installation asks for no Mogoj configuration: on the next session Mogoj defaults to `auto`, creates a private `~/.mogoj` store, builds the local index, recalls relevant context for each prompt, and checkpoints meaningful completed work. You do not have to run `mogoj`, ask Claude to remember, or paste previous-session context.
+
+To change the behavior later, edit `~/.mogoj/config.ini` and set `mode` under `[automation]` to `confirm`, `manual`, or `off`. The same file controls startup/prompt budgets and maximum checkpoint size.
 
 Example: in one session, tell Claude:
 
