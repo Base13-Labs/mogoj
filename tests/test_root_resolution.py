@@ -62,7 +62,10 @@ class RootResolutionTests(unittest.TestCase):
     def test_symlink_is_normalized(self):
         store = self.store("real")
         link = self.base / "linked"
-        link.symlink_to(store, target_is_directory=True)
+        try:
+            link.symlink_to(store, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"symlink creation is unavailable: {exc}")
         result = self.run_tool(SEARCH, "--verbose", "anything", cwd=link)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(f"Mogoj root: {store.resolve()}", result.stderr)

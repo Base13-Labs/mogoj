@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -22,7 +23,7 @@ class CliJourneyTests(unittest.TestCase):
 
     def run_cli(self, *args, check=True):
         result = subprocess.run(
-            [str(CLI), "--root", str(self.root), *args], env=self.env,
+            [sys.executable, str(CLI), "--root", str(self.root), *args], env=self.env,
             text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
         if check and result.returncode:
@@ -46,7 +47,7 @@ class CliJourneyTests(unittest.TestCase):
         self.assertTrue(json.loads(doctor.stdout)["ok"])
 
     def test_help_has_copy_paste_examples_and_version_is_json(self):
-        help_result = subprocess.run([str(CLI), "--help"], text=True, stdout=subprocess.PIPE)
+        help_result = subprocess.run([sys.executable, str(CLI), "--help"], text=True, stdout=subprocess.PIPE)
         self.assertIn("mogoj init", help_result.stdout)
         initialized = self.run_cli("init")
         self.assertIn("Mogoj is ready", initialized.stdout)

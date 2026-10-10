@@ -2,6 +2,7 @@
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $Cli = Join-Path $RepoRoot "tools/cli.py"
+$env:PYTHONUTF8 = "1"
 
 $Python = Get-Command python3 -ErrorAction SilentlyContinue
 if (-not $Python) {

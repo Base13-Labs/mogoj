@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +10,7 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 class InstallerTests(unittest.TestCase):
+    @unittest.skipIf(os.name == "nt", "managed shell installer supports macOS/Linux; Windows uses the PowerShell launcher")
     def test_five_clean_machine_personas_and_data_preserving_uninstall(self):
         for persona in ("default", "with space", "মগজ", "import", "cli-only"):
             with self.subTest(persona=persona), tempfile.TemporaryDirectory() as directory:

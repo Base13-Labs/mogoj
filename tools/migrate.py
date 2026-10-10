@@ -145,8 +145,11 @@ def rebuild_database(dry_run=False, label="rebuild"):
             command, env=env, check=True, text=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
-        with sqlite3.connect(str(stage)) as connection:
+        connection = sqlite3.connect(str(stage))
+        try:
             result = connection.execute("PRAGMA integrity_check").fetchone()
+        finally:
+            connection.close()
         if not result or result[0] != "ok":
             raise MogojError("Staged database failed integrity_check", EXIT_CORRUPT)
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)

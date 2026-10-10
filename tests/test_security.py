@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,7 +17,7 @@ class SecurityTests(unittest.TestCase):
         self.root = Path(self.temp.name) / "store"
         self.env = os.environ.copy()
         self.env["HOME"] = str(Path(self.temp.name) / "home")
-        subprocess.run([str(CLI), "--root", str(self.root), "init"], env=self.env, check=True,
+        subprocess.run([sys.executable, str(CLI), "--root", str(self.root), "init"], env=self.env, check=True,
                        stdout=subprocess.PIPE, text=True)
 
     def tearDown(self):
@@ -24,7 +25,7 @@ class SecurityTests(unittest.TestCase):
 
     def run_cli(self, *args):
         return subprocess.run(
-            [str(CLI), "--root", str(self.root), *args], env=self.env,
+            [sys.executable, str(CLI), "--root", str(self.root), *args], env=self.env,
             text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
 
@@ -48,7 +49,10 @@ class SecurityTests(unittest.TestCase):
         outside.write_text("private\n")
         day = __import__("datetime").date.today().isoformat()
         destination = self.root / "docs" / "notes" / f"{day}-linked.md"
-        destination.symlink_to(outside)
+        try:
+            destination.symlink_to(outside)
+        except OSError as exc:
+            self.skipTest(f"symlink creation is unavailable: {exc}")
         result = self.run_cli("save", "new", "--title", "linked", "--force")
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(outside.read_text(), "private\n")
