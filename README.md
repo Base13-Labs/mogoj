@@ -9,8 +9,7 @@
 - **RAM management** — live working memory for current/last session state
 - **Doc graph** — find relationships between documents via shared keywords
 - **Ingest external knowledge** — scan and import markdown from any source
-- **Structured debates** — multi-AI (Claude + Codex) debates with convergence tracking
-- **Task planning + execution** — generate task lists and run them autonomously
+- **Optional workflows** — debates, planning, and autonomous task execution are separate add-ons
 
 ## Quick Start
 
@@ -35,9 +34,7 @@ mogoj/                    # This repo — the engine
 │   ├── mogoj-save.md     # /mogoj-save — persist session
 │   ├── mogoj-search.md   # /mogoj-search — search memory
 │   ├── mogoj-show.md     # /mogoj-show — list commands + stats
-│   ├── mogoj-debate.md   # /mogoj-debate — multi-AI debate
-│   ├── mogoj-plan.md     # /mogoj-plan — generate task list
-│   └── run-tasks.md      # /run-tasks — autonomous executor
+├── addons/               # Optional higher-permission workflows
 ├── tools/                # Python CLI tools (stdlib only)
 │   ├── index.py          # Keyword index CRUD
 │   ├── search.py         # Full-text search
@@ -71,9 +68,8 @@ brain/                    # Your memory store (private)
 | `/mogoj-save` | Persist session to memory (index + RAM) |
 | `/mogoj-search` | Search across all memory |
 | `/mogoj-show` | List all commands + memory stats |
-| `/mogoj-debate` | Multi-AI structured debate (Claude + Codex) |
-| `/mogoj-plan` | Generate task list for `/run-tasks` |
-| `/run-tasks` | Autonomous task executor |
+Optional debate, planning, and autonomous execution workflows are not installed
+by default. They are not required for memory capture or retrieval.
 
 ## Tools
 
