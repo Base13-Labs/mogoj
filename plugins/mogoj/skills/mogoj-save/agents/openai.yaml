@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Save"
+  short_description: "Save durable local memory safely"
+  default_prompt: "Use $mogoj-save to save this decision to local memory."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mogoj Plan"
+  short_description: "Turn an outcome into a safe work plan"
+  default_prompt: "Use $mogoj-plan to plan this outcome."
