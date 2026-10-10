@@ -61,11 +61,13 @@ class SecurityTests(unittest.TestCase):
         saved = self.run_cli("save", "private memory", "--title", "permissions")
         self.assertEqual(saved.returncode, 0, saved.stderr)
         memory = next((self.root / "docs" / "notes").glob("*.md"))
-        self.assertEqual(memory.stat().st_mode & 0o777, 0o600)
+        if os.name != "nt":
+            self.assertEqual(memory.stat().st_mode & 0o777, 0o600)
         backup = self.run_cli("backup")
         self.assertEqual(backup.returncode, 0, backup.stderr)
         archive = next((self.root / ".mogoj" / "backups").glob("*.zip"))
-        self.assertEqual(archive.stat().st_mode & 0o777, 0o600)
+        if os.name != "nt":
+            self.assertEqual(archive.stat().st_mode & 0o777, 0o600)
 
 
 if __name__ == "__main__":

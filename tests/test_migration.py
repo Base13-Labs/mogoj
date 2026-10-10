@@ -44,9 +44,12 @@ class MigrationTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(source.read_bytes(), original)
         database = root / "data" / "db" / "mogoj.db"
-        with sqlite3.connect(str(database)) as connection:
+        connection = sqlite3.connect(str(database))
+        try:
             self.assertEqual(connection.execute("PRAGMA integrity_check").fetchone()[0], "ok")
             self.assertEqual(connection.execute("SELECT count(*) FROM docs").fetchone()[0], 1)
+        finally:
+            connection.close()
         self.assertTrue((root / ".mogoj" / "store.json").is_file())
         self.assertEqual(len(list((root / ".mogoj" / "backups").glob("*.zip"))), 2)
 
@@ -78,8 +81,11 @@ class MigrationTests(unittest.TestCase):
         result = self.run_mogoj(root, "rollback")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(source.read_text(), "# changed after backup\n")
-        with sqlite3.connect(str(database)) as connection:
+        connection = sqlite3.connect(str(database))
+        try:
             self.assertEqual(connection.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+        finally:
+            connection.close()
 
 
 if __name__ == "__main__":

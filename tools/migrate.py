@@ -53,6 +53,17 @@ def _iter_backup_files():
 
 def backup_store(label="backup", dry_run=False):
     """Create a timestamped, private ZIP snapshot of the store."""
+    if DB_PATH.is_file() and not dry_run:
+        connection = None
+        try:
+            connection = sqlite3.connect(str(DB_PATH), timeout=10)
+            connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except sqlite3.Error:
+            # A backup of corrupt state is still valuable for manual recovery.
+            pass
+        finally:
+            if connection is not None:
+                connection.close()
     destination = BACKUP_DIR / f"{_timestamp()}-{label}.zip"
     files = list(_iter_backup_files())
     if dry_run:
@@ -199,6 +210,9 @@ def rollback(backup_name=None, dry_run=False):
             if relative not in names:
                 continue
             destination.parent.mkdir(parents=True, exist_ok=True)
+            for sidecar in (Path(str(destination) + "-wal"), Path(str(destination) + "-shm")):
+                if sidecar.exists():
+                    sidecar.unlink()
             temporary = destination.with_suffix(destination.suffix + ".rollback")
             temporary.write_bytes(archive.read(relative))
             os.replace(temporary, destination)

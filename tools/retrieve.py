@@ -98,11 +98,15 @@ def retrieve(query, token_budget=RETRIEVAL_TOKEN_BUDGET, char_budget=None,
     sql.append("ORDER BY bm25_score LIMIT ?")
     params.append(max(result_limit * 3, result_limit))
 
+    connection = None
     try:
-        with sqlite3.connect(str(DB_PATH)) as connection:
-            rows = connection.execute("\n".join(sql), params).fetchall()
+        connection = sqlite3.connect(str(DB_PATH))
+        rows = connection.execute("\n".join(sql), params).fetchall()
     except sqlite3.OperationalError as exc:
         raise PrereqError(f"Search index is unavailable; run 'mogoj rebuild': {exc}") from exc
+    finally:
+        if connection is not None:
+            connection.close()
 
     ranked = []
     for rank, (path, title, doc_type, created, content, raw_bm25) in enumerate(rows, start=1):
@@ -111,7 +115,7 @@ def retrieve(query, token_budget=RETRIEVAL_TOKEN_BUDGET, char_budget=None,
         if score < min_score:
             continue
         source = _source_path(path)
-        citation_path = str(source.relative_to(ROOT)) if source else path
+        citation_path = source.relative_to(ROOT).as_posix() if source else Path(path).as_posix()
         snippet, line_start, line_end = _best_snippet(content, query, MAX_SNIPPET_CHARS)
         ranked.append({
             "path": citation_path,
