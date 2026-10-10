@@ -62,6 +62,9 @@ AUTO_ARCHIVE = _getbool("ram", "auto_archive", True)
 # --- Search ---
 CONTEXT_LINES = _get("search", "context_lines", 1, int)
 MAX_RESULTS = _get("search", "max_results", 50, int)
+RETRIEVAL_TOKEN_BUDGET = _get("search", "retrieval_token_budget", 1200, int)
+CHARS_PER_TOKEN = _get("search", "chars_per_token", 4, int)
+MAX_SNIPPET_CHARS = _get("search", "max_snippet_chars", 480, int)
 
 # --- Health ---
 STALE_DAYS = _get("health", "stale_days", 30, int)
