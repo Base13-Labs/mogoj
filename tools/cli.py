@@ -12,6 +12,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from security import detect_secrets, redact_secrets  # noqa: E402
+
 
 ENGINE = Path(__file__).resolve().parents[1]
 VERSION = (ENGINE / "VERSION").read_text().strip()
@@ -84,6 +87,7 @@ def cmd_init(args):
     )
     for directory in directories:
         (root / directory).mkdir(parents=True, exist_ok=True)
+        (root / directory).chmod(0o700)
     marker = root / MARKER
     if not marker.exists():
         marker.write_text(json.dumps({
@@ -91,12 +95,20 @@ def cmd_init(args):
             "created_at": datetime.now(timezone.utc).isoformat(),
             "mogoj_version": VERSION,
         }, indent=2) + "\n")
+        marker.chmod(0o600)
     config = root / "config.ini"
     if not config.exists():
         shutil.copy2(ENGINE / "config.ini.example", config)
+        config.chmod(0o600)
     current = root / "data" / "ram" / "current.md"
     if not current.exists():
         current.write_text("# Active memory\n\nNo active session yet.\n")
+        current.chmod(0o600)
+    privacy_ignore = root / ".gitignore"
+    if not privacy_ignore.exists():
+        privacy_ignore.write_text(
+            ".env\n.env.*\n.mogoj/backups/\ndata/db/\nimports/\n*.log\n"
+        )
     result = {"ok": True, "root": str(root), "version": VERSION}
     if args.json:
         emit(result, True)
@@ -142,6 +154,15 @@ def cmd_save(args):
         text = sys.stdin.read().strip()
     if not text:
         raise CliError("Add memory text, for example: mogoj save \"Customer prefers email\"")
+    findings = detect_secrets(text)
+    if findings and args.redact:
+        text = redact_secrets(text)
+    elif findings and not args.allow_secrets:
+        labels = ", ".join(findings)
+        raise CliError(
+            f"Possible secret detected ({labels}). The value was not printed or saved. "
+            "Use --redact, or --allow-secrets only if this private store is appropriate."
+        )
     title = args.title or text.splitlines()[0][:80]
     kind_dir = {
         "note": "notes", "project": "projects", "decision": "decisions",
@@ -149,12 +170,19 @@ def cmd_save(args):
     }[args.type]
     day = datetime.now(timezone.utc).date().isoformat()
     destination = root / "docs" / kind_dir / f"{day}-{_slug(title)}.md"
+    try:
+        destination.resolve().relative_to(root.resolve())
+    except ValueError as exc:
+        raise CliError("Refusing to write through a path outside the memory store.") from exc
+    if destination.is_symlink():
+        raise CliError("Refusing to overwrite a symbolic link.")
     if destination.exists() and not args.force:
         raise CliError(f"Memory already exists: {destination}. Use --force to replace it.")
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         f"# {title}\n\nDate: {day}\nType: {args.type}\n\n{text.strip()}\n"
     )
+    destination.chmod(0o600)
     database = root / "data" / "db" / "mogoj.db"
     if database.is_file():
         run_tool(root, "db.py", ["sync"], capture=True)
@@ -207,6 +235,12 @@ def cmd_doctor(args):
     check("SQLite FTS5", fts_ok, fts_detail)
     check("Store marker", initialized(root), str(root / MARKER))
     check("Store writable", os.access(root, os.W_OK), str(root))
+    check(
+        "Git privacy", not (root / ".git").exists(),
+        "store is not a Git repository" if not (root / ".git").exists()
+        else "store is a Git repository; confirm its remote is private before committing memories",
+        "warning",
+    )
     check("Configuration", (root / "config.ini").is_file(), str(root / "config.ini"), "warning")
 
     files = markdown_files(root)
@@ -289,6 +323,8 @@ def build_parser():
     save_parser.add_argument("--title")
     save_parser.add_argument("--type", choices=("note", "project", "decision", "company", "person"), default="note")
     save_parser.add_argument("--force", action="store_true")
+    save_parser.add_argument("--redact", action="store_true", help="Replace detected secrets before saving")
+    save_parser.add_argument("--allow-secrets", action="store_true", help="Save despite a secret warning")
     save_parser.set_defaults(func=cmd_save)
 
     search_parser = sub.add_parser("search", help="Retrieve bounded, cited context")
@@ -315,6 +351,7 @@ def build_parser():
 
 
 def main():
+    os.umask(0o077)
     parser = build_parser()
     args = parser.parse_args()
     try:

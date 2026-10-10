@@ -138,6 +138,7 @@ def cmd_init(args):
                  (datetime.now().isoformat(),))
     conn.commit()
     conn.close()
+    DB_PATH.chmod(0o600)
 
     print(f"Database created: {DB_PATH}")
     print(f"Size: {DB_PATH.stat().st_size} bytes")

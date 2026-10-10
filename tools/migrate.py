@@ -197,6 +197,7 @@ def rollback(backup_name=None, dry_run=False):
 
 @mogoj_main
 def main():
+    os.umask(0o077)
     parser = argparse.ArgumentParser(description="Mogoj safe store migration utilities")
     add_root_arguments(parser)
     parser.add_argument("--dry-run", action="store_true", help="Report changes without writing")
