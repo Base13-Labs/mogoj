@@ -1,0 +1,31 @@
+{
+  "name": "mogoj",
+  "displayName": "Mogoj Automatic Memory",
+  "version": "0.1.0-beta.1",
+  "description": "Automatic, private Claude Code memory with bounded, cited recall",
+  "author": {
+    "name": "Base13 Labs",
+    "url": "https://github.com/Base13-Labs"
+  },
+  "homepage": "https://github.com/Base13-Labs/mogoj",
+  "repository": "https://github.com/Base13-Labs/mogoj",
+  "license": "MIT",
+  "keywords": ["memory", "automatic", "local-first", "search", "sqlite"],
+  "defaultEnabled": true,
+  "skills": "./plugins/mogoj/skills/",
+  "hooks": "./plugins/mogoj/hooks/hooks.json",
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Memory mode",
+      "description": "auto saves durable outcomes; confirm asks first; manual only saves when requested",
+      "default": "auto"
+    },
+    "memory_path": {
+      "type": "string",
+      "title": "Memory location",
+      "description": "Private Mogoj store path; ~ expands to your home directory",
+      "default": "~/.mogoj"
+    }
+  }
+}

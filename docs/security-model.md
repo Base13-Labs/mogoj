@@ -8,14 +8,16 @@ Mogoj is local-first. It has no telemetry, hosted account, analytics beacon, emb
 - SQLite stores searchable copies of that Markdown plus titles, dates, types, paths, keywords, and access metadata.
 - Backups may contain the complete store, including private Markdown. Backup files are mode `0600` by default.
 - CLI output contains requested snippets and source citations. Secret warnings name only the matched pattern, never the matched value.
-- Mogoj never sends memory, queries, logs, or usage data over the network. Installation and optional marketplace operations are the only network-facing workflows.
+- In Claude Code `auto` mode, the current prompt is used transiently for local retrieval. Meaningful completed turns save a capped checkpoint containing the user request and Claude's final handoff, not the raw transcript. Common secret patterns are redacted before the checkpoint is written.
+- `.mogoj/automation-state.json` stores deduplication hashes and the latest checkpoint path; it does not store prompts or responses.
+- Mogoj itself makes no network requests for memory, queries, logs, or usage data. In the Claude plugin, matched memory excerpts are deliberately returned as model context and therefore leave the local Mogoj process through Claude Code under the provider's and organization's data-handling settings. Installation and optional marketplace operations are also network-facing workflows.
 - Mogoj never intentionally stores environment variables, shell history, credentials, or files outside an explicit import/save operation.
 
-Read-only commands are `status`, `doctor`, `search`, and `recent`. `save`, `init`, `migrate`, `rebuild`, `backup`, `rollback`, and import operations write within the resolved store. Migration and rebuild create a backup and stage SQLite before atomic replacement. Rollback restores generated artifacts but never deletes or replaces Markdown automatically.
+Read-only commands are `status`, `doctor`, `search`, and `recent`. `save`, automatic Claude checkpoints, `init`, `migrate`, `rebuild`, `backup`, `rollback`, and import operations write within the resolved store. Migration and rebuild create a backup and stage SQLite before atomic replacement. Rollback restores generated artifacts but never deletes or replaces Markdown automatically.
 
 ## Threat model
 
-Mogoj protects against selecting an unrelated Git repository, path traversal, symlink overwrite, interrupted database rebuilds, accidental secret pastes, permissive newly-created files, and accidental inclusion of databases/backups/imports in Git. It cannot protect a store from a compromised OS account, an agent or editor already authorized to read the directory, unsafe `--allow-secrets` use, or a cloud/Git client configured by the user.
+Mogoj protects against selecting an unrelated Git repository, path traversal, symlink overwrite, interrupted database rebuilds, accidental secret pastes, permissive newly-created files, and accidental inclusion of databases/backups/imports in Git. Recalled excerpts are labeled as untrusted data rather than instructions to reduce stored prompt-injection risk. Mogoj cannot protect a store from a compromised OS account, an agent or editor already authorized to read the directory, all possible secret formats, a malicious passage that the model still follows, unsafe `--allow-secrets` use, or a cloud/Git client configured by the user.
 
 Before saving, common private-key and provider-token patterns are blocked. Use `--redact` to replace detected values. `--allow-secrets` is an explicit escape hatch for a secured private store; it is never implied.
 

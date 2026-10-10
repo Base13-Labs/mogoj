@@ -1,15 +1,17 @@
 # Mogoj v0.1.0-beta.1
 
-This first public beta makes local, portable AI memory usable from one CLI and installable as Claude Code and Codex/ChatGPT plugins. Markdown remains the source of truth; local SQLite FTS5 provides bounded, cited recall without embeddings or a hosted service.
+This first public beta gives Claude Code automatic local memory after one plugin install. It recalls small, relevant, source-cited context for each prompt and selectively checkpoints meaningful completed work without requiring the user to run Mogoj commands. Markdown remains the source of truth; local SQLite FTS5 provides bounded recall without embeddings or a hosted service. An optional CLI supports other agents and advanced workflows.
 
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Base13-Labs/mogoj/main/install.sh | sh
-~/.local/bin/mogoj onboard
+claude plugin marketplace add Base13-Labs/mogoj
+claude plugin install mogoj@base13-labs
 ```
 
-Existing users should run `mogoj migrate --dry-run`, then `mogoj migrate`. A timestamped backup is created first. Use `mogoj rollback` to restore generated state; Markdown is never deleted automatically.
+Start a new Claude Code session and work normally. The first session creates the private `~/.mogoj` store and local index automatically. The optional standalone CLI is documented in `docs/installation.md`.
+
+Existing standalone CLI users should run `mogoj migrate --dry-run`, then `mogoj migrate`. A timestamped backup is created first. Use `mogoj rollback` to restore generated state; Markdown is never deleted automatically.
 
 ## Supported environments
 
@@ -18,6 +20,7 @@ Python 3.9–3.13 on macOS 13+, Ubuntu 22.04/24.04, Windows 11 with PowerShell 7
 ## Known limitations
 
 - Native Windows has a PowerShell launcher but no one-command installer.
+- Automatic capture is heuristic; explicitly save critical decisions when exact wording matters.
 - Token estimates use characters divided by four rather than provider tokenizers.
 - BM25 is lexical; rephrase a query when terminology differs.
 - No sync, encryption layer, GUI, hosted backup, or recovery service is included.
