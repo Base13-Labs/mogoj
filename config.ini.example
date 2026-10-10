@@ -24,3 +24,10 @@ max_snippet_chars = 480
 
 [health]
 stale_days = 30
+
+[automation]
+# Claude Code plugin modes: auto, confirm, manual, or off.
+mode = auto
+startup_token_budget = 250
+prompt_token_budget = 500
+capture_max_chars = 6000

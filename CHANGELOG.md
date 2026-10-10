@@ -2,6 +2,18 @@
 
 All notable changes are documented here. Mogoj uses semantic versioning; the single version source is `VERSION`.
 
+## [Unreleased]
+
+### Added
+
+- Zero-command Claude Code memory through `SessionStart`, `UserPromptSubmit`, `Stop`, `PreCompact`, and `SessionEnd` hooks.
+- Automatic private-store initialization, bounded source-cited recall, and selective redacted session checkpoints.
+- `auto`, `confirm`, `manual`, and `off` automation modes with configurable recall and capture budgets.
+
+### Changed
+
+- The Claude plugin now packages the canonical runtime, so users do not need a separate CLI installation.
+
 ## [0.1.0-beta.1] - 2026-10-10
 
 ### Added

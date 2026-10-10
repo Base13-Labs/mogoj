@@ -7,8 +7,8 @@
   "plugins": [
     {
       "name": "mogoj",
-      "source": "./plugins/mogoj",
-      "description": "Private, local-first memory with bounded, cited recall"
+      "source": "./",
+      "description": "Automatic private memory for Claude Code with bounded, cited recall"
     },
     {
       "name": "mogoj-workflows",

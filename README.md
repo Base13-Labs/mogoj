@@ -1,35 +1,47 @@
 # Mogoj
 
-Mogoj gives AI coding assistants private, durable memory on your machine—and recalls only the useful, source-cited context that fits your token budget.
+Mogoj gives Claude Code private, automatic, durable memory on your machine—and recalls only the useful, source-cited context that fits your token budget. A CLI remains available for other agents and advanced use, but normal Claude Code use requires no Mogoj commands.
 
 > **Beta:** `v0.1.0-beta.1` is for early adopters. Back up important stores, review retrieved context before relying on it, and report bugs with synthetic data.
 
 ![A terminal installs Mogoj, saves a decision, and recalls it](docs/assets/terminal-demo.gif)
 
-## First value in about 60 seconds
+## Automatic Claude Code memory in about 60 seconds
 
-On macOS or Linux, copy and paste:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Base13-Labs/mogoj/main/install.sh | sh
-~/.local/bin/mogoj onboard
-```
-
-The installer explains what it creates. Onboarding asks where private memory should live, which agents you use, and whether to import existing Markdown. No repository clone, manual symlink, shell-profile edit, account, API key, or hosted database is required.
-
-Save a decision and recall it:
+Install the Base13 marketplace and plugin once:
 
 ```bash
-~/.local/bin/mogoj save "We chose SQLite because memory must remain local." --title "Local search" --type decision
-~/.local/bin/mogoj rebuild
-~/.local/bin/mogoj search "Why did we choose SQLite?"
+claude plugin marketplace add Base13-Labs/mogoj
+claude plugin install mogoj@base13-labs
 ```
 
-The answer is a bounded context packet with citations such as `docs/decisions/2026-10-10-local-search.md:L1-L3`, not a dump of every memory.
+Then use Claude Code normally. On the next session Mogoj creates a private `~/.mogoj` store, builds the local index, recalls relevant context for each prompt, and checkpoints meaningful completed work. You do not have to run `mogoj`, ask Claude to remember, or paste previous-session context. Plugin settings expose `auto`, `confirm`, and `manual` modes plus a custom store path.
+
+Example: in one session, tell Claude:
+
+```text
+Use SQLite for local search and add the migration tests.
+```
+
+Open a new Claude Code session later and ask, “Why did we choose SQLite?” Mogoj automatically places the relevant bounded checkpoint beside that prompt, with a source citation such as `data/sessions/2026-10-10-claude-my-project-a1b2c3d4.md:L1-L12`. Claude sees continuity without receiving the whole memory store.
+
+For terminal-only or non-Claude use, see the optional [CLI installation guide](docs/installation.md).
+
+The optional CLI remains fully supported for scripting, other agents, and explicit control:
+
+```bash
+mogoj onboard
+mogoj save "Use SQLite for local search" --title "Database decision" --type decision
+mogoj rebuild
+mogoj search "Why SQLite?"
+mogoj migrate --dry-run
+mogoj doctor
+mogoj rollback --dry-run
+```
 
 ## Your data stays understandable
 
-Markdown is the source of truth. The local SQLite FTS5 database is a disposable search accelerator. Mogoj has no telemetry, cloud account, embedding API, or automatic network upload. New files and backups are private by default; common secret patterns are blocked before save.
+Markdown is the source of truth. The local SQLite FTS5 database is a disposable search accelerator. Mogoj has no telemetry, cloud account, embedding API, or independent network upload. New files and backups are private by default; common secret patterns are blocked before save. In automatic mode, matched excerpts are deliberately added to Claude's model context and are therefore governed by your Claude Code provider and organization data settings.
 
 ```text
 ~/.mogoj/                  your private store
@@ -44,8 +56,8 @@ Read the [privacy and threat model](docs/security-model.md) before putting a sto
 
 ## Supported agents
 
-- CLI: works independently with any assistant or editor.
-- Claude Code: install the [validated Claude plugin](docs/claude-plugin.md).
+- Claude Code: install the [automatic-memory plugin](docs/claude-plugin.md); normal use is zero-command.
+- CLI: an optional deterministic interface for any assistant, editor, or advanced workflow.
 - Codex and supported ChatGPT plugin surfaces: use the [portable Agent Plugin](docs/codex-plugin.md).
 - Optional debate/planning/task-running workflows are a separate add-on; they do not ship in the memory core.
 
@@ -53,21 +65,21 @@ See the [platform matrix](docs/platform-support.md) for tested operating systems
 
 ## How recall works
 
-Mogoj indexes Markdown locally with SQLite FTS5/BM25. Retrieval is progressive: a compact result index, one ranked snippet per document, then full content only when explicitly requested and still within budget. Recency, type, project, and relevance influence ranking. The default packet is capped at about 1,200 estimated tokens.
+Mogoj indexes Markdown locally with SQLite FTS5/BM25. In Claude Code, a `UserPromptSubmit` hook turns the current prompt and project into a focused local query. Retrieval is progressive: a compact result index, one ranked snippet per document, then full content only when explicitly requested and still within budget. Automatic prompt recall defaults to about 500 estimated tokens; explicit CLI search defaults to about 1,200.
+
+At `Stop`, `PreCompact`, and `SessionEnd`, Mogoj selectively checkpoints durable outcomes such as implemented changes, decisions, test results, blockers, and next steps. It ignores short conversational noise, redacts common secret patterns, caps saved text, and deduplicates repeated lifecycle events. It stores a structured handoff rather than a raw transcript.
 
 Mogoj is not a generic vector database. It does not require embeddings, a model call, a server, chunk hosting, or opaque binary source data. Choose a vector database when you need semantic retrieval over very large corpora or a multi-user service. Choose Mogoj when humans should own readable files, citations and migrations matter, and the context window—not storage—is the scarce resource. See the [published beta benchmark](docs/beta-retrieval-benchmark.md).
 
 ## Architecture in 30 seconds
 
-Mogoj separates the **engine** from the **memory store**. The engine is the CLI and agent plugins in this repository. The store is a private directory owned by the user. Markdown in that store is canonical; SQLite FTS5 is a disposable, rebuildable index. Every client—terminal, Claude Code, Codex, or a supported ChatGPT plugin surface—uses the same CLI, so storage, privacy checks, root selection, retrieval budgets, and citations behave consistently.
+Mogoj separates the **engine** from the **memory store**. The engine is the deterministic local runtime and agent plugins in this repository. The store is a private directory owned by the user. Markdown in that store is canonical; SQLite FTS5 is a disposable, rebuildable index. Claude lifecycle hooks call the same engine used by the optional CLI, so automatic and manual operation share storage, privacy checks, retrieval budgets, and citations.
 
 ```text
-person or AI agent
-        │
-        ▼
-agent skill/plugin ──────┐
-                        ▼
-terminal ───────────► mogoj CLI
+Claude lifecycle hooks ──┐
+agent skill/plugin ──────┤
+                         ▼
+optional terminal ──► Mogoj engine
                         │
              ┌──────────┴──────────┐
              ▼                     ▼
@@ -80,7 +92,7 @@ terminal ───────────► mogoj CLI
               bounded cited context
 ```
 
-The central design choice is to optimize the *context sent to an AI*, not to maximize stored data. Search returns a small ranked index and cited snippets first; full documents are opt-in and included only when they fit the configured budget. Read the [long-form architecture and design reasoning](docs/architecture.md) for component boundaries, write/search/migration flows, safety properties, and trade-offs.
+The central design choice is to optimize the *context sent to an AI*, not to maximize stored data. Automatic recall returns a small cited packet only when a prompt has a useful match, and automatic capture stores durable outcomes rather than every turn. Read the [long-form architecture and design reasoning](docs/architecture.md) for component boundaries, hook flows, safety properties, and trade-offs.
 
 ## Upgrade, migration, and rollback
 
@@ -113,6 +125,7 @@ For a corrupted index, run `mogoj rebuild`; for an interrupted migration, rerun 
 - Native Windows has a PowerShell launcher but not yet a one-command installer; WSL is the easiest Windows path.
 - Token counts use a deterministic character estimate, not a provider-specific tokenizer.
 - Search is lexical BM25, so differently worded concepts may require a second query.
+- Automatic capture is heuristic. Review important checkpoints and use explicit save for critical wording.
 - No multi-device synchronization, encryption layer, GUI, hosted backup, or recovery service is included.
 - Codex marketplace distribution is repo-local until accepted into a public directory.
 - Three novice human installation sign-offs remain a release gate; the protocol is documented and results must not be fabricated.
