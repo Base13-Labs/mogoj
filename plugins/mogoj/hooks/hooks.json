@@ -57,7 +57,7 @@
           {
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/hooks/run.cjs\" session-end",
-            "timeout": 5
+            "timeout": 3
           }
         ]
       }

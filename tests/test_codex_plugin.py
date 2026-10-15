@@ -49,6 +49,10 @@ class CodexPluginTests(unittest.TestCase):
             for hook in group["hooks"]
         ]
         self.assertTrue(all("${PLUGIN_ROOT}/hooks/run.cjs" in command for command in commands))
+        self.assertLessEqual(
+            hooks["hooks"]["SessionEnd"][0]["hooks"][0]["timeout"],
+            3,
+        )
         self.assertTrue((PLUGIN / "tools" / "auto_memory.py").is_file())
         self.assertEqual(
             (PLUGIN / "tools" / "auto_memory.py").read_bytes(),
