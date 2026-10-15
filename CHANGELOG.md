@@ -9,11 +9,13 @@ All notable changes are documented here. Mogoj uses semantic versioning; the sin
 - Zero-command Claude Code memory through `SessionStart`, `UserPromptSubmit`, `Stop`, `PreCompact`, and `SessionEnd` hooks.
 - Automatic private-store initialization, bounded source-cited recall, and selective redacted session checkpoints.
 - `auto`, `confirm`, `manual`, and `off` automation modes with configurable recall and capture budgets.
+- Self-contained automatic Codex desktop package, deterministic plugin ZIP, public GitHub marketplace installation, and bundled runtime.
 
 ### Changed
 
 - The Claude plugin now packages the canonical runtime, so users do not need a separate CLI installation.
 - Claude plugin installation no longer asks configuration questions; it starts in `auto` mode with `~/.mogoj`, and users can change behavior later in `config.ini`.
+- Codex skills and hooks now invoke the packaged runtime instead of requiring a global `mogoj` command.
 
 ## [0.1.0-beta.1] - 2026-10-10
 

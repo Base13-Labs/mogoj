@@ -4,7 +4,7 @@
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 
-const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, "../../..");
+const pluginRoot = process.env.PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, "..");
 const event = process.argv[2] || "";
 const input = require("node:fs").readFileSync(0);
 const isCli = event === "cli";
@@ -17,7 +17,10 @@ for (const executable of process.platform === "win32" ? ["python", "py"] : ["pyt
   result = spawnSync(executable, args, {
     input,
     encoding: "utf8",
-    env: process.env,
+    env: {
+      ...process.env,
+      MOGOJ_AGENT: process.env.MOGOJ_AGENT || (process.env.PLUGIN_ROOT ? "codex" : "claude-code"),
+    },
     timeout: 19000,
     windowsHide: true,
   });

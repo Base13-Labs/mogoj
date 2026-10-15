@@ -1,0 +1,33 @@
+# Mogoj configuration — optional. Delete this file to use defaults.
+# All values below match the hardcoded defaults.
+
+[paths]
+scan_dirs = docs,data/sessions
+
+[index]
+max_keywords_per_doc = 20
+min_keyword_length = 3
+fingerprint_length = 12
+hash_length = 8
+
+[ram]
+max_lines = 35
+max_bytes = 1536
+auto_archive = true
+
+[search]
+context_lines = 1
+max_results = 50
+retrieval_token_budget = 1200
+chars_per_token = 4
+max_snippet_chars = 480
+
+[health]
+stale_days = 30
+
+[automation]
+# Claude Code plugin modes: auto, confirm, manual, or off.
+mode = auto
+startup_token_budget = 250
+prompt_token_budget = 500
+capture_max_chars = 6000

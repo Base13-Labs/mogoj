@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Claude Code lifecycle hooks for zero-touch Mogoj recall and checkpointing."""
+"""Coding-agent lifecycle hooks for zero-touch Mogoj recall and checkpointing."""
 
 import configparser
 import hashlib
@@ -100,7 +100,7 @@ def _ensure_store(root):
         "format": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "mogoj_version": (ENGINE / "VERSION").read_text().strip(),
-        "created_by": "claude-code-plugin",
+        "created_by": f"{_agent()}-plugin",
     }, indent=2) + "\n")
     config = root / "config.ini"
     if not config.exists():
@@ -152,6 +152,15 @@ def _save_state(root, state):
 def _project_name(cwd):
     path = Path(cwd or Path.cwd()).expanduser().resolve()
     return path.name or "project"
+
+
+def _agent():
+    value = os.environ.get("MOGOJ_AGENT", "claude-code").strip().lower()
+    return value if value in {"claude-code", "codex"} else "coding-agent"
+
+
+def _agent_label():
+    return {"claude-code": "Claude Code", "codex": "Codex"}.get(_agent(), "Coding agent")
 
 
 def _slug(value):
@@ -307,9 +316,11 @@ def _checkpoint(root, event, data, config):
         return None
     project = _project_name(data.get("cwd"))
     day = datetime.now(timezone.utc).date().isoformat()
-    path = root / "data/sessions" / f"{day}-claude-{_slug(project)}-{fingerprint[:8]}.md"
+    agent = _agent()
+    label = _agent_label()
+    path = root / "data/sessions" / f"{day}-{_slug(agent)}-{_slug(project)}-{fingerprint[:8]}.md"
     content = (
-        f"# Claude Code checkpoint: {project}\n\n"
+        f"# {label} checkpoint: {project}\n\n"
         f"Date: {day}\nType: session\nProject: {project}\n"
         f"Session: {data.get('session_id', 'unknown')}\nTrigger: {event}\n\n"
         f"## User request\n\n{user or '(not available)'}\n\n"
