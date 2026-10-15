@@ -1,6 +1,6 @@
 # Mogoj
 
-Mogoj gives Claude Code private, automatic, durable memory on your machine—and recalls only the useful, source-cited context that fits your token budget. A CLI remains available for other agents and advanced use, but normal Claude Code use requires no Mogoj commands.
+Mogoj gives Claude Code and Codex private, automatic, durable memory on your machine—and recalls only the useful, source-cited context that fits your token budget. A CLI remains available for other agents and advanced use, but normal plugin use requires no Mogoj commands.
 
 > **Beta:** `v0.1.0-beta.1` is for early adopters. Back up important stores, review retrieved context before relying on it, and report bugs with synthetic data.
 
@@ -28,6 +28,17 @@ Use SQLite for local search and add the migration tests.
 Open a new Claude Code session later and ask, “Why did we choose SQLite?” Mogoj automatically places the relevant bounded checkpoint beside that prompt, with a source citation such as `data/sessions/2026-10-10-claude-my-project-a1b2c3d4.md:L1-L12`. Claude sees continuity without receiving the whole memory store.
 
 For terminal-only or non-Claude use, see the optional [CLI installation guide](docs/installation.md).
+
+## Automatic Codex memory
+
+Add the public Base13 Labs marketplace and install Mogoj:
+
+```bash
+codex plugin marketplace add Base13-Labs/mogoj --ref main
+codex plugin add mogoj@base13-labs
+```
+
+Start a new Codex task, review and trust the packaged lifecycle hooks when prompted, and work normally. The Codex package contains its own Mogoj runtime, defaults to `auto`, and uses the same private `~/.mogoj` store as Claude Code. See the [Codex plugin guide](docs/codex-plugin.md) for lifecycle and security details.
 
 The optional CLI remains fully supported for scripting, other agents, and explicit control:
 
@@ -60,7 +71,7 @@ Read the [privacy and threat model](docs/security-model.md) before putting a sto
 
 - Claude Code: install the [automatic-memory plugin](docs/claude-plugin.md); normal use is zero-command.
 - CLI: an optional deterministic interface for any assistant, editor, or advanced workflow.
-- Codex and supported ChatGPT plugin surfaces: use the [portable Agent Plugin](docs/codex-plugin.md).
+- Codex desktop: install the [automatic-memory plugin](docs/codex-plugin.md); normal use is zero-command after hook trust.
 - Optional debate/planning/task-running workflows are a separate add-on; they do not ship in the memory core.
 
 See the [platform matrix](docs/platform-support.md) for tested operating systems, Python, SQLite, and integration versions.
@@ -78,7 +89,7 @@ Mogoj is not a generic vector database. It does not require embeddings, a model 
 Mogoj separates the **engine** from the **memory store**. The engine is the deterministic local runtime and agent plugins in this repository. The store is a private directory owned by the user. Markdown in that store is canonical; SQLite FTS5 is a disposable, rebuildable index. Claude lifecycle hooks call the same engine used by the optional CLI, so automatic and manual operation share storage, privacy checks, retrieval budgets, and citations.
 
 ```text
-Claude lifecycle hooks ──┐
+agent lifecycle hooks ───┐
 agent skill/plugin ──────┤
                          ▼
 optional terminal ──► Mogoj engine
@@ -129,8 +140,7 @@ For a corrupted index, run `mogoj rebuild`; for an interrupted migration, rerun 
 - Search is lexical BM25, so differently worded concepts may require a second query.
 - Automatic capture is heuristic. Review important checkpoints and use explicit save for critical wording.
 - No multi-device synchronization, encryption layer, GUI, hosted backup, or recovery service is included.
-- Codex marketplace distribution is repo-local until accepted into a public directory.
-- Three novice human installation sign-offs remain a release gate; the protocol is documented and results must not be fabricated.
+- Automatic hooks require a manually installed Codex desktop plugin and explicit hook trust. OpenAI's universal public directory does not accept hook-bearing plugins.
 
 ## Example and handoff
 

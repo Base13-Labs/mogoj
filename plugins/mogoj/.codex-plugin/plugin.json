@@ -1,7 +1,7 @@
 {
   "name": "mogoj",
   "version": "0.1.0-beta.1",
-  "description": "Private, local-first memory with bounded, cited recall",
+  "description": "Automatic, private Codex memory with bounded, cited recall",
   "author": {
     "name": "Base13 Labs",
     "url": "https://github.com/Base13-Labs"
@@ -9,15 +9,15 @@
   "homepage": "https://github.com/Base13-Labs/mogoj",
   "repository": "https://github.com/Base13-Labs/mogoj",
   "license": "MIT",
-  "keywords": ["memory", "local-first", "search", "sqlite"],
+  "keywords": ["memory", "automatic", "codex", "local-first", "search", "sqlite"],
   "skills": "./skills/",
   "interface": {
     "displayName": "Mogoj Local Memory",
-    "shortDescription": "Private memory with bounded, cited recall",
-    "longDescription": "Save durable Markdown memory locally and recall only the most relevant, source-cited snippets within a strict context budget.",
+    "shortDescription": "Private, cited coding memory",
+    "longDescription": "Give Codex automatic, private project memory. Mogoj recalls only relevant source-cited excerpts within strict context budgets and saves conservative Markdown checkpoints after meaningful work. Everything stays local by default, requires no account or API key, and remains inspectable and editable by the user.",
     "developerName": "Base13 Labs",
     "category": "Productivity",
-    "capabilities": ["Local memory", "Bounded retrieval", "Source citations"],
+    "capabilities": ["Automatic local recall", "Durable checkpoints", "Bounded retrieval", "Source citations"],
     "websiteURL": "https://github.com/Base13-Labs/mogoj",
     "privacyPolicyURL": "https://github.com/Base13-Labs/mogoj/blob/main/docs/security-model.md",
     "termsOfServiceURL": "https://github.com/Base13-Labs/mogoj/blob/main/LICENSE",

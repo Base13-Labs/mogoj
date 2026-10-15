@@ -13,5 +13,5 @@
   "keywords": ["memory", "automatic", "local-first", "search", "sqlite"],
   "defaultEnabled": true,
   "skills": "./plugins/mogoj/skills/",
-  "hooks": "./plugins/mogoj/hooks/hooks.json"
+  "hooks": "./plugins/mogoj/hooks/claude-hooks.json"
 }

@@ -31,7 +31,9 @@ jobs:
       - name: Run complete test and clean-machine smoke suite
         run: python -m unittest discover -s tests -v
       - name: Build deterministic artifacts, SBOM, and checksums
-        run: python scripts/build_release.py
+        run: |
+          python scripts/build_release.py
+          python scripts/build_codex_plugin.py
       - name: Verify checksums
         working-directory: dist
         run: sha256sum --check SHA256SUMS

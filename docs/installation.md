@@ -13,6 +13,15 @@ The installer asks for no Mogoj settings. Start a new Claude Code session and wo
 
 See [Automatic memory in Claude Code](claude-plugin.md) for modes, budgets, lifecycle behavior, update, disable, and uninstall instructions.
 
+## Automatic Codex memory
+
+```bash
+codex plugin marketplace add Base13-Labs/mogoj --ref main
+codex plugin add mogoj@base13-labs
+```
+
+Start a new Codex task and approve the packaged lifecycle hooks after reviewing them. The self-contained plugin creates `~/.mogoj` automatically and needs no global Mogoj command. See [Automatic memory in Codex](codex-plugin.md).
+
 ## Optional standalone CLI
 
 On macOS or Linux:
