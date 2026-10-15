@@ -36,7 +36,9 @@ jobs:
           python scripts/build_codex_plugin.py
       - name: Verify checksums
         working-directory: dist
-        run: sha256sum --check SHA256SUMS
+        run: |
+          sha256sum --check SHA256SUMS
+          sha256sum --check mogoj-codex-*.zip.sha256
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
